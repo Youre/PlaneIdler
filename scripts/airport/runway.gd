@@ -42,11 +42,11 @@ func set_length(new_length: float) -> void:
 	if _mesh:
 		var bm := _build_mesh()
 		_mesh.mesh = bm
-	# reposition labels
+	# reposition labels near the new runway ends
 	if _label_a:
-		_label_a.position.x = -length_m * 0.35
+		_label_a.position.x = -length_m * 0.45
 	if _label_b:
-		_label_b.position.x = length_m * 0.35
+		_label_b.position.x = length_m * 0.45
 
 func set_heading(new_heading: float) -> void:
 	heading_deg = fposmod(new_heading, 360.0)

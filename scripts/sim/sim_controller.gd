@@ -16,7 +16,7 @@ var _actors: Array = []
 var _flyovers: Array = []
 var _flyby_timer: float = 0.0
 var _flyby_next: float = 60.0
-const CULL_DISTANCE: float = 900.0
+const CULL_DISTANCE: float = 650.0
 
 func _ready() -> void:
 	randomize()
@@ -208,11 +208,12 @@ func _spawn_flyby() -> void:
 	_flyovers.append(actor)
 
 func _cull_far_actors() -> void:
+	var center: Vector3 = runway.global_transform.origin if runway != null else Vector3.ZERO
 	for actor in _actors.duplicate():
-		if actor and actor.is_inside_tree() and actor.global_transform.origin.length() > CULL_DISTANCE:
+		if actor and actor.is_inside_tree() and actor.global_transform.origin.distance_to(center) > CULL_DISTANCE:
 			actor.queue_free()
 			_actors.erase(actor)
 	for actor in _flyovers.duplicate():
-		if actor and actor.is_inside_tree() and actor.global_transform.origin.length() > CULL_DISTANCE:
+		if actor and actor.is_inside_tree() and actor.global_transform.origin.distance_to(center) > CULL_DISTANCE:
 			actor.queue_free()
 			_flyovers.erase(actor)

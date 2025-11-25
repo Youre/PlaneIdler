@@ -7,6 +7,8 @@ class_name UpgradeManager
 @export var runway: Runway
 @export var console_label: RichTextLabel
 var owned_upgrades: Array = []
+var runway_extensions: int = 0
+var ga_packs_purchased: int = 0
 
 func buy_ga_pack(cost: float = 1800.0, count: int = 2) -> void:
 	if not _can_afford(cost):
@@ -16,24 +18,30 @@ func buy_ga_pack(cost: float = 1800.0, count: int = 2) -> void:
 	if airport_manager:
 		airport_manager.add_stands("ga_small", count)
 	_log("[color=lime]Purchased GA stand pack (+%d)[/color]" % count)
-	owned_upgrades.append("ga_pack")
+	ga_packs_purchased += 1
 
 func buy_runway_extension(cost: float = 4500.0, extra_m: float = 200.0) -> void:
 	if not _can_afford(cost):
 		_log("[color=yellow]Insufficient funds for runway extension[/color]")
 		return
+	if runway and runway.length_m >= _max_runway_length():
+		_log("[color=yellow]Runway is already at maximum useful length[/color]")
+		return
 	_spend(cost)
 	if runway:
 		runway.set_length(runway.length_m + extra_m)
 	_log("[color=lime]Purchased runway extension (+%dm)[/color]" % int(extra_m))
-	owned_upgrades.append("rwy_ext")
+	runway_extensions += 1
 	_recenter_camera()
 
 func get_available_upgrades(bank: float) -> Array:
 	var list: Array = []
-	if not owned_upgrades.has("ga_pack"):
+	# GA stand packs: allow one base pack plus one extra per runway extension.
+	var allowed_ga_packs: int = 1 + runway_extensions
+	if ga_packs_purchased < allowed_ga_packs:
 		list.append({"id":"ga_pack","cost":1800,"desc":"Add 2 GA stands"})
-	if not owned_upgrades.has("rwy_ext"):
+	# Runway extensions: only while there is still benefit for aircraft catalog.
+	if runway and runway.length_m < _max_runway_length():
 		list.append({"id":"rwy_ext","cost":4500,"desc":"Extend runway by 200m"})
 	if not owned_upgrades.has("rwy_parallel"):
 		list.append({"id":"rwy_parallel","cost":15000,"desc":"Build parallel runway with L/R"})
@@ -86,6 +94,18 @@ func _can_afford(cost: float) -> bool:
 func _spend(cost: float) -> void:
 	sim.sim_state.bank -= cost
 	sim.emit_signal("bank_changed", sim.sim_state.bank)
+
+func _max_runway_length() -> float:
+	if sim == null:
+		return runway.length_m if runway != null else 0.0
+	var max_len: float = 0.0
+	for ac in sim.sim_state.aircraft_catalog:
+		if typeof(ac) == TYPE_DICTIONARY and ac.has("runway"):
+			var r = ac["runway"]
+			var len = float(r.get("minLengthMeters", 0.0))
+			if len > max_len:
+				max_len = len
+	return max_len
 
 func _log(msg: String) -> void:
 	if console_label:

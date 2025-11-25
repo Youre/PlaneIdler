@@ -45,6 +45,9 @@ func _ready() -> void:
 		$UI/HUD/UpgradesPanel/BtnRWY.connect("pressed", Callable(self, "_on_buy_rwy"))
 	if $UI/HUD/UpgradesPanelToggle:
 		$UI/HUD/UpgradesPanelToggle.connect("pressed", Callable(self, "_on_toggle_upgrades"))
+	var debug_btn = $UI/HUD.get_node_or_null("DebugAddCash")
+	if debug_btn:
+		debug_btn.connect("pressed", Callable(self, "_on_debug_add_cash"))
 
 func _log(message: String) -> void:
 	if console_label:
@@ -91,3 +94,11 @@ func _on_toggle_upgrades() -> void:
 	if panel:
 		panel.visible = not panel.visible
 		$UI/HUD/UpgradesPanelToggle.text = "Upgrades" + (" (open)" if panel.visible else "")
+
+func _on_debug_add_cash() -> void:
+	if sim == null:
+		return
+	var amount: float = 5000.0
+	sim.sim_state.bank += amount
+	sim.emit_signal("bank_changed", sim.sim_state.bank)
+	_log("[color=green]+%.0f[/color] debug cash added; bank=%.0f" % [amount, sim.sim_state.bank])
