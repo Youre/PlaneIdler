@@ -18,8 +18,6 @@ func _ready() -> void:
 	_log("[color=lime]Project booted[/color]")
 	_log("Aircraft loaded: %d" % aircraft_catalog.size())
 	_log("Upgrades loaded: %d" % upgrade_catalog.size())
-	if ollama:
-		_log("Ollama client configured (model: %s) [integration deferred]" % ollama.model)
 	if sim:
 		sim.console_label = console_label
 		sim.set_catalogs(aircraft_catalog, upgrade_catalog)

@@ -112,10 +112,12 @@ func _update_labels() -> void:
 		reciprocal -= 36
 	if _label_a:
 		_label_a.mesh.text = "%02d%s" % [primary, suffix]
-		_label_a.rotation_degrees = Vector3(-90, 0, 0)
+		# top points toward negative X end (local left)
+		_label_a.rotation_degrees = Vector3(-90, -90, 0)
 	if _label_b:
 		_label_b.mesh.text = "%02d%s" % [reciprocal, suffix]
-		_label_b.rotation_degrees = Vector3(-90, 180, 0)
+		# top points toward positive X end (local right)
+		_label_b.rotation_degrees = Vector3(-90, 90, 0)
 
 func _make_text_mesh(txt: String) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()

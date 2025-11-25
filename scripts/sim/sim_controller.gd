@@ -124,9 +124,10 @@ func _spawn_actor_for_arrival(aircraft: Dictionary, stand: Stand) -> void:
 		return
 	var actor = aircraft_scene.instantiate()
 	get_parent().add_child(actor)
+	actor.set_random_color()
 	actor.speed_mps = 40.0
-	var fwd = runway.global_transform.basis.z.normalized()
-	var right = runway.global_transform.basis.x.normalized()
+	var fwd = runway.global_transform.basis.x.normalized() # runway length axis
+	var right = runway.global_transform.basis.z.normalized()
 	var start = runway.global_transform.origin - fwd * 250.0 + Vector3(0, 12, 0)
 	var runway_touch = runway.global_transform.origin + Vector3(0, 0.2, 0)
 	var stand_pos = stand.global_transform.origin + Vector3(0, 0.7, 0)
@@ -141,8 +142,9 @@ func _spawn_departure_actor(stand: Stand) -> void:
 		return
 	var actor = aircraft_scene.instantiate()
 	get_parent().add_child(actor)
+	actor.set_random_color()
 	actor.speed_mps = 35.0
-	var fwd = runway.global_transform.basis.z.normalized()
+	var fwd = runway.global_transform.basis.x.normalized()
 	var start = stand.global_transform.origin + Vector3(0, 0.5, 0)
 	var runway_point = runway.global_transform.origin + fwd * 15.0
 	var exit = runway.global_transform.origin + fwd * 300.0 + Vector3(0, 6, 0)
@@ -167,12 +169,13 @@ func _spawn_flyover(aircraft: Dictionary) -> void:
 	get_parent().add_child(actor)
 	actor.speed_mps = 60.0
 	actor.set_divert_visual()
+	actor.set_random_color()
 	var dir = 1.0 if randf() > 0.5 else -1.0
 	var lateral_sign = 1.0 if randf() > 0.5 else -1.0
 	var lateral = randf_range(80.0, 140.0) * lateral_sign
 	var alt = randf_range(30.0, 55.0)
-	var fwd = runway.global_transform.basis.z.normalized()
-	var right = runway.global_transform.basis.x.normalized()
+	var fwd = runway.global_transform.basis.x.normalized()
+	var right = runway.global_transform.basis.z.normalized()
 	var start = runway.global_transform.origin - fwd * 450.0 * dir + right * lateral + Vector3(0, alt, 0)
 	var mid = runway.global_transform.origin + right * (lateral * 0.35) + Vector3(0, alt - 5, 0)
 	var end = runway.global_transform.origin + fwd * 450.0 * dir + right * lateral + Vector3(0, alt + 5, 0)
@@ -188,12 +191,13 @@ func _spawn_flyby() -> void:
 	var actor = aircraft_scene.instantiate()
 	get_parent().add_child(actor)
 	actor.speed_mps = 55.0
+	actor.set_random_color()
 	var dir = 1.0 if randf() > 0.5 else -1.0
 	var lateral_sign = 1.0 if randf() > 0.5 else -1.0
 	var lateral = randf_range(200.0, 320.0) * lateral_sign
 	var alt = randf_range(70.0, 110.0)
-	var fwd = runway.global_transform.basis.z.normalized()
-	var right = runway.global_transform.basis.x.normalized()
+	var fwd = runway.global_transform.basis.x.normalized()
+	var right = runway.global_transform.basis.z.normalized()
 	var start = runway.global_transform.origin - fwd * 550.0 * dir + right * lateral + Vector3(0, alt, 0)
 	var mid = runway.global_transform.origin + right * (lateral * 0.4) + Vector3(0, alt, 0)
 	var end = runway.global_transform.origin + fwd * 550.0 * dir + right * lateral + Vector3(0, alt, 0)

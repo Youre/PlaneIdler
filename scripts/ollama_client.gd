@@ -3,7 +3,7 @@ extends Node
 class_name OllamaClient
 
 @export var base_url: String = "http://127.0.0.1:11434"
-@export var model: String = "qwen3:4b"
+@export var model: String = "gpt-oss:20b"
 
 var _http: HTTPRequest
 
@@ -33,8 +33,21 @@ func generate(prompt: String, custom_model: String = "", temperature: float = 0.
 	var raw_body: PackedByteArray = result[3]
 	if status != 200:
 		return { "ok": false, "error": "HTTP %d" % status, "status": status }
-	var text := raw_body.get_string_from_utf8()
-	var parsed = JSON.parse_string(text)
-	if typeof(parsed) != TYPE_DICTIONARY or not parsed.has("response"):
-		return { "ok": false, "error": "Bad payload", "payload": text }
-	return { "ok": true, "text": str(parsed["response"]) }
+	var raw_text := raw_body.get_string_from_utf8()
+	var parsed = JSON.parse_string(raw_text)
+	var out_text := ""
+	var thinking_text := ""
+	if typeof(parsed) == TYPE_DICTIONARY:
+		if parsed.has("response"):
+			out_text = str(parsed["response"]).strip_edges()
+		if parsed.has("thinking"):
+			thinking_text = str(parsed["thinking"]).strip_edges()
+	# Fall back to raw body text only if we did not get a structured response.
+	if out_text == "":
+		out_text = raw_text.strip_edges()
+	return {
+		"ok": true,
+		"text": out_text,
+		"raw": raw_text,
+		"thinking": thinking_text
+	}

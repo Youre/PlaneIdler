@@ -25,6 +25,17 @@ func _ready() -> void:
 	_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	add_child(_mesh)
 
+func set_random_color() -> void:
+	if _mesh and _mesh.material_override:
+		var mat: StandardMaterial3D = _mesh.material_override
+		var hue = randf()
+		mat.albedo_color = Color.from_hsv(hue, 0.7, 0.9)
+
+func set_color(c: Color) -> void:
+	if _mesh and _mesh.material_override:
+		var mat: StandardMaterial3D = _mesh.material_override
+		mat.albedo_color = c
+
 func start_path(points: Array, on_complete: Callable) -> void:
 	if points.size() < 2:
 		return
@@ -47,6 +58,7 @@ func set_divert_visual() -> void:
 	if _mesh and _mesh.material_override:
 		var mat: StandardMaterial3D = _mesh.material_override
 		mat.albedo_color = divert_color
+		_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 func _process(delta: float) -> void:
 	if not _active or path.size() < 2:

@@ -3,7 +3,7 @@ extends Node3D
 class_name AirportManager
 
 @export var stand_spacing: float = 25.0
-@export var stand_row_origin: Vector3 = Vector3(-60, 0.15, 40)
+@export var stand_row_origin: Vector3 = Vector3(0, 0.15, 0) # base is now computed from runway dims
 @export var initial_ga_small: int = 3
 @export var stand_scene: PackedScene
 @export var heading_choices := PackedFloat32Array()
@@ -26,16 +26,14 @@ func _build_initial_layout() -> void:
 		for c in stands_container.get_children():
 			c.queue_free()
 		_next_index = 1
-		var z := stand_row_origin.z
 		for i in range(initial_ga_small):
-			var pos = Vector3(stand_row_origin.x - (i * stand_spacing), stand_row_origin.y, z)
+			var pos = _stand_local_position(_next_index)
 			_spawn_stand("ga_small", "GA%d" % (_next_index), pos)
 			_next_index += 1
 
 func add_stands(stand_class: String, count: int) -> void:
-	var z := stand_row_origin.z
 	for i in range(count):
-		var pos = Vector3(stand_row_origin.x - ((_next_index-1) * stand_spacing), stand_row_origin.y, z)
+		var pos = _stand_local_position(_next_index)
 		_spawn_stand(stand_class, "%s%d" % [stand_class.to_upper().substr(0,2), _next_index], pos)
 		_next_index += 1
 
@@ -117,13 +115,19 @@ func _spawn_stand(stand_class: String, label: String, position: Vector3) -> void
 		return
 	stand.stand_class = stand_class
 	stand.label = label
-	stand.position = _rotate_vec(position)
+	stand.position = _pivot_rotate(position)
 	if _runway != null:
 		stand.rotation.y = deg_to_rad(_runway.heading_deg)
 	stands_container.add_child(stand)
 
-func _rotate_vec(v: Vector3) -> Vector3:
+func _pivot_rotate(local_offset: Vector3) -> Vector3:
 	if _runway == null:
-		return v
-	var basis = Basis(Vector3.UP, deg_to_rad(_runway.heading_deg))
-	return basis.xform(v)
+		return local_offset
+	return _runway.global_transform.origin + _runway.global_transform.basis * local_offset
+
+func _stand_local_position(idx: int) -> Vector3:
+	var width = _runway.width_m if _runway else 30.0
+	var z_offset = width * 0.5 + 12.0
+	var start_x = -((stand_spacing * (initial_ga_small - 1)) / 2.0)
+	var x = start_x + (idx - 1) * stand_spacing
+	return Vector3(x, stand_row_origin.y, z_offset)
