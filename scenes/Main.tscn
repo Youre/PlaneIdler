@@ -1,0 +1,155 @@
+[gd_scene load_steps=12 format=3 uid="uid://cn680eaa8r3xm"]
+
+[ext_resource type="Script" uid="uid://7srku83i56d3" path="res://scripts/main.gd" id="1_jc6uw"]
+[ext_resource type="PackedScene" path="res://scenes/airport/Airport.tscn" id="2_ny6nj"]
+[ext_resource type="Script" uid="uid://cloiwv20wqb2f" path="res://scripts/ollama_client.gd" id="3_fvnlr"]
+[ext_resource type="Script" uid="uid://catjpfemx51xx" path="res://scripts/sim/sim_controller.gd" id="4_r04aq"]
+[ext_resource type="Script" uid="uid://20r6nwvpfhs5" path="res://scripts/sim/arrival_generator.gd" id="5_7qg0b"]
+[ext_resource type="Script" uid="uid://6ajwrow5f6yr" path="res://scripts/sim/sim_state.gd" id="6_gl3gn"]
+[ext_resource type="Script" uid="uid://cq85u6lplt3k8" path="res://scripts/sim/stand_manager.gd" id="7_wdmjo"]
+[ext_resource type="Script" uid="uid://dysp2asee0r23" path="res://scripts/sim/eligibility.gd" id="8_6rfo5"]
+[ext_resource type="PackedScene" path="res://scenes/actors/AircraftActor.tscn" id="9_2w6gd"]
+[ext_resource type="Script" uid="uid://dft0lcibylnqe" path="res://scripts/upgrade_manager.gd" id="10_k2t0s"]
+[ext_resource type="Script" uid="uid://byi51xp6gb8mq" path="res://scripts/llm_agent.gd" id="11_cit2v"]
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_jc6uw")
+
+[node name="OllamaClient" type="Node" parent="."]
+script = ExtResource("3_fvnlr")
+
+[node name="Sim" type="Node" parent="."]
+script = ExtResource("4_r04aq")
+aircraft_scene = ExtResource("9_2w6gd")
+
+[node name="ArrivalGenerator" type="Node" parent="Sim"]
+script = ExtResource("5_7qg0b")
+
+[node name="SimState" type="Node" parent="Sim"]
+script = ExtResource("6_gl3gn")
+
+[node name="StandManager" type="Node" parent="Sim"]
+script = ExtResource("7_wdmjo")
+
+[node name="Eligibility" type="Node" parent="Sim"]
+script = ExtResource("8_6rfo5")
+
+[node name="Upgrades" type="Node" parent="."]
+script = ExtResource("10_k2t0s")
+
+[node name="LLM" type="Node" parent="."]
+script = ExtResource("11_cit2v")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.8625136, 0.065174855, 0.50181913, -8.669465e-08, -0.99167114, 0.1287956, 0.50603384, -0.11108799, -0.8553299, 306.07593, 140, 0)
+light_energy = 1.241
+light_volumetric_fog_energy = 0.0
+shadow_enabled = true
+shadow_bias = 0.02
+directional_shadow_mode = 1
+directional_shadow_max_distance = 1200.0
+
+[node name="AirportRoot" parent="." instance=ExtResource("2_ny6nj")]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 120, 120)
+projection = 1
+fov = 50.0
+size = 160.0
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="HUD" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Bank" type="Label" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 13
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -260.0
+offset_top = 0.0
+offset_right = -20.0
+offset_bottom = 22.0
+grow_horizontal = 2
+text = "Bank: $0"
+
+[node name="UpgradesPanel" type="VBoxContainer" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 0.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -220.0
+offset_right = 210.0
+offset_bottom = -20.0
+theme_override_constants/separation = 6
+visible = false
+
+[node name="BtnGA" type="Button" parent="UI/HUD/UpgradesPanel"]
+layout_mode = 2
+text = "Buy GA Stand Pack (+2) $1800"
+
+[node name="BtnRWY" type="Button" parent="UI/HUD/UpgradesPanel"]
+layout_mode = 2
+text = "Extend Runway +200m $4500"
+
+[node name="TimeScale" type="HSlider" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 13
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -200.0
+offset_top = 26.0
+offset_right = -16.0
+offset_bottom = 46.0
+grow_horizontal = 2
+min_value = 0.5
+max_value = 4.0
+step = 0.1
+value = 1.0
+
+[node name="Console" type="RichTextLabel" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 0.4
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = -360.0
+offset_right = 0.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+text = "[b]Console[/b]\\nInitialized."
+scroll_following = true
+
+[node name="UpgradesPanelToggle" type="Button" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 0.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = -230.0
+offset_right = 120.0
+offset_bottom = -202.0
+text = "Upgrades"

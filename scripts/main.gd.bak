@@ -1,0 +1,57 @@
+extends Node3D
+
+@onready var console_label: RichTextLabel = $UI/HUD/Console
+@onready var bank_label: Label = $UI/HUD/Bank
+@onready var time_scale_slider: HSlider = $UI/HUD/TimeScale
+@onready var ollama: OllamaClient = $OllamaClient
+@onready var sim: SimController = $Sim
+
+var aircraft_catalog: Array = []
+var upgrade_catalog: Array = []
+
+func _ready() -> void:
+	_position_camera()
+	aircraft_catalog = CatalogLoader.load_aircraft()
+	upgrade_catalog = CatalogLoader.load_upgrades()
+	_log("[color=lime]Project booted[/color]")
+	_log("Aircraft loaded: %d" % aircraft_catalog.size())
+	_log("Upgrades loaded: %d" % upgrade_catalog.size())
+	if ollama:
+		_log("Ollama client configured (model: %s) [integration deferred]" % ollama.model)
+	if sim:
+		sim.console_label = console_label
+		sim.set_catalogs(aircraft_catalog, upgrade_catalog)
+		var stands = $AirportRoot/Stands.get_children()
+		sim.set_stands(stands)
+		sim.connect("bank_changed", Callable(self, "_on_bank_changed"))
+		_on_bank_changed(sim.sim_state.bank)
+	if time_scale_slider:
+		time_scale_slider.value = sim.time_scale if sim != null else 1.0
+		time_scale_slider.connect("value_changed", Callable(self, "_on_time_scale_changed"))
+
+func _log(message: String) -> void:
+	if console_label:
+		console_label.append_text(message + "\n")
+	print(message)
+
+func _position_camera() -> void:
+	var cam: Camera3D = $Camera3D
+	if cam:
+		cam.transform.origin = Vector3(0, 140, 140)
+		cam.look_at(Vector3.ZERO, Vector3.UP)
+		cam.size = 180
+
+func _on_bank_changed(value: float) -> void:
+	if bank_label:
+		var ts = sim.time_scale if sim != null else 1.0
+		bank_label.text = "%s | Bank: $%0.0f" % (_time_scale_label(ts), value)
+
+func _on_time_scale_changed(val: float) -> void:
+	if sim:
+		sim.time_scale = val
+	if bank_label:
+		var bank_val = sim.sim_state.bank if sim != null else 0
+		bank_label.text = "%s | Bank: $%0.0f" % (_time_scale_label(val), bank_val)
+
+func _time_scale_label(val: float) -> String:
+	return "Time x%.1f" % val

@@ -1,0 +1,184 @@
+[
+  {
+    "id": "ga_stand_pack_1",
+    "displayName": "Add 2 GA Stands",
+    "category": "stand",
+    "cost": 1800,
+    "buildTimeSeconds": 60,
+    "prerequisites": [],
+    "effects": [
+      { "type": "add_stand", "standClass": "ga_small", "count": 2 }
+    ],
+    "tierUnlock": 0
+  },
+  {
+    "id": "ga_stand_pack_2",
+    "displayName": "Add 2 Medium GA Stands",
+    "category": "stand",
+    "cost": 3200,
+    "buildTimeSeconds": 90,
+    "prerequisites": [ "pave_runway" ],
+    "effects": [
+      { "type": "add_stand", "standClass": "ga_medium", "count": 2 }
+    ],
+    "tierUnlock": 1
+  },
+  {
+    "id": "runway_extension_1",
+    "displayName": "Extend Runway +300 m",
+    "category": "extension",
+    "cost": 4500,
+    "buildTimeSeconds": 120,
+    "prerequisites": [],
+    "effects": [
+      { "type": "extend_runway", "meters": 300 }
+    ],
+    "tierUnlock": 0
+  },
+  {
+    "id": "pave_runway",
+    "displayName": "Pave Runway (Grass -> Asphalt)",
+    "category": "surface",
+    "cost": 5200,
+    "buildTimeSeconds": 180,
+    "prerequisites": [ "runway_extension_1" ],
+    "effects": [
+      { "type": "upgrade_surface", "from": "grass", "to": "asphalt" }
+    ],
+    "tierUnlock": 1
+  },
+  {
+    "id": "taxi_loop",
+    "displayName": "Add Taxiway Loop",
+    "category": "taxiway",
+    "cost": 2600,
+    "buildTimeSeconds": 120,
+    "prerequisites": [ "pave_runway" ],
+    "effects": [
+      { "type": "add_taxi_exit", "runwayId": "rwy1", "kind": "standard" }
+    ],
+    "tierUnlock": 1
+  },
+  {
+    "id": "regional_gate_pair",
+    "displayName": "Add 2 Regional Gates",
+    "category": "stand",
+    "cost": 6200,
+    "buildTimeSeconds": 240,
+    "prerequisites": [ "pave_runway", "runway_extension_1" ],
+    "effects": [
+      { "type": "add_stand", "standClass": "regional", "count": 2 }
+    ],
+    "tierUnlock": 2
+  },
+  {
+    "id": "runway_extension_2",
+    "displayName": "Extend Runway +500 m",
+    "category": "extension",
+    "cost": 8200,
+    "buildTimeSeconds": 240,
+    "prerequisites": [ "pave_runway" ],
+    "effects": [
+      { "type": "extend_runway", "meters": 500 }
+    ],
+    "tierUnlock": 2
+  },
+  {
+    "id": "concrete_upgrade",
+    "displayName": "Concrete Surface Upgrade",
+    "category": "surface",
+    "cost": 12000,
+    "buildTimeSeconds": 360,
+    "prerequisites": [ "runway_extension_2" ],
+    "effects": [
+      { "type": "upgrade_surface", "from": "asphalt", "to": "concrete" }
+    ],
+    "tierUnlock": 3
+  },
+  {
+    "id": "narrowbody_gate_pair",
+    "displayName": "Add 2 Narrowbody Gates",
+    "category": "stand",
+    "cost": 14000,
+    "buildTimeSeconds": 420,
+    "prerequisites": [ "concrete_upgrade" ],
+    "effects": [
+      { "type": "add_stand", "standClass": "narrowbody", "count": 2 }
+    ],
+    "tierUnlock": 3
+  },
+  {
+    "id": "fuel_farm",
+    "displayName": "Fuel Farm (Income +15%)",
+    "category": "multiplier",
+    "cost": 9500,
+    "buildTimeSeconds": 300,
+    "prerequisites": [ "pave_runway" ],
+    "effects": [
+      { "type": "multiplier", "target": "income", "value": 1.15 }
+    ],
+    "tierUnlock": 2
+  },
+  {
+    "id": "second_runway",
+    "displayName": "Build Second Runway",
+    "category": "runway",
+    "cost": 24000,
+    "buildTimeSeconds": 900,
+    "prerequisites": [ "concrete_upgrade" ],
+    "effects": [
+      { "type": "add_runway", "lengthMeters": 2400, "surface": "concrete", "widthClass": "standard", "ops": "both" }
+    ],
+    "tierUnlock": 3
+  },
+  {
+    "id": "rapid_exit",
+    "displayName": "Rapid Exit Taxiway",
+    "category": "taxiway",
+    "cost": 5200,
+    "buildTimeSeconds": 210,
+    "prerequisites": [ "second_runway" ],
+    "effects": [
+      { "type": "add_taxi_exit", "runwayId": "rwy2", "kind": "rapid" }
+    ],
+    "tierUnlock": 3
+  },
+  {
+    "id": "widebody_stand",
+    "displayName": "Add 1 Widebody Stand",
+    "category": "stand",
+    "cost": 22000,
+    "buildTimeSeconds": 780,
+    "prerequisites": [ "second_runway", "concrete_upgrade" ],
+    "effects": [
+      { "type": "add_stand", "standClass": "widebody", "count": 1 }
+    ],
+    "tierUnlock": 4
+  },
+  {
+    "id": "ils_lighting",
+    "displayName": "ILS + Lighting (Night Ops)",
+    "category": "nav",
+    "cost": 6800,
+    "buildTimeSeconds": 240,
+    "prerequisites": [ "pave_runway" ],
+    "effects": [
+      { "type": "unlock_nav", "capability": "night_ops" },
+      { "type": "unlock_nav", "capability": "ils" }
+    ],
+    "tierUnlock": 2
+  },
+  {
+    "id": "cargo_apron",
+    "displayName": "Cargo Apron (2 Stands)",
+    "category": "stand",
+    "cost": 12500,
+    "buildTimeSeconds": 420,
+    "prerequisites": [ "runway_extension_2" ],
+    "effects": [
+      { "type": "add_stand", "standClass": "regional", "count": 1 },
+      { "type": "add_stand", "standClass": "widebody", "count": 1 }
+    ],
+    "tierUnlock": 3
+  }
+]
