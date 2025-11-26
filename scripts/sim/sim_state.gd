@@ -6,6 +6,10 @@ var time_seconds: float = 0.0
 var bank: float = 0.0
 var aircraft_catalog: Array = []
 var upgrade_catalog: Array = []
+var income_multiplier: float = 1.0
+var nav_capabilities := {}
+var progression_tier: int = 0
+var traffic_rate_multiplier: float = 1.0
 
 var active_arrivals: Array = []
 var active_parking: Array = []

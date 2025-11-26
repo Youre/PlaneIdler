@@ -1,0 +1,10 @@
+1. When an airplane comes in to land, we end up with a duplicate yellow box at the parking space, then end up with multiple boxes at the parking space. The yellow boxes never get removed from the scene.
+   - Status: DONE (legacy yellow stand marker no longer used on arrivals/departures).
+2. Airplanes that fly out of view aren't getting removed from the scene -- the yare staying there and we can see them static as the camera zooms out when we buy runway extensions.
+   - Status: DONE (SimController._cull_far_actors removes distant actors and flyovers).
+3. Airport CEO frequently says the same exact thing: "I'm going to hold funds for now and watch traffic." I would expect this to change from time to time.
+   - Status: DONE (LLMAgent now varies fallback statement based on bank level).
+4. Have airplanes point in the direction they are moving.
+   - Status: DONE (AircraftActor now rotates to face its movement direction in _process()).
+
+5. It looks like we have letting airplanes land at occupied parking spaces. Incoming airplanes are not allowed to target an occupied parking space. If the Airport CEO purchased ATC, then we can allow airplanes to target an occupied parking space, only if the current occupant is leaving before the arriving aircraft will get there.

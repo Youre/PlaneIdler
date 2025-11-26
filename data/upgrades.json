@@ -5,6 +5,7 @@
     "category": "stand",
     "cost": 1800,
     "buildTimeSeconds": 60,
+    "maxPurchases": 3,
     "prerequisites": [],
     "effects": [
       { "type": "add_stand", "standClass": "ga_small", "count": 2 }
@@ -12,11 +13,25 @@
     "tierUnlock": 0
   },
   {
+    "id": "tower_upgrade",
+    "displayName": "Control Tower & ATC",
+    "category": "utility",
+    "cost": 7000,
+    "buildTimeSeconds": 240,
+    "maxPurchases": 1,
+    "prerequisites": [ "runway_extension_1" ],
+    "effects": [
+      { "type": "multiplier", "target": "arrival_rate", "value": 1.25 }
+    ],
+    "tierUnlock": 1
+  },
+  {
     "id": "ga_stand_pack_2",
     "displayName": "Add 2 Medium GA Stands",
     "category": "stand",
     "cost": 3200,
     "buildTimeSeconds": 90,
+    "maxPurchases": 3,
     "prerequisites": [ "pave_runway" ],
     "effects": [
       { "type": "add_stand", "standClass": "ga_medium", "count": 2 }
@@ -29,6 +44,7 @@
     "category": "extension",
     "cost": 4500,
     "buildTimeSeconds": 120,
+    "maxPurchases": 1,
     "prerequisites": [],
     "effects": [
       { "type": "extend_runway", "meters": 300 }
@@ -41,6 +57,7 @@
     "category": "surface",
     "cost": 5200,
     "buildTimeSeconds": 180,
+    "maxPurchases": 1,
     "prerequisites": [ "runway_extension_1" ],
     "effects": [
       { "type": "upgrade_surface", "from": "grass", "to": "asphalt" }
@@ -53,6 +70,7 @@
     "category": "taxiway",
     "cost": 2600,
     "buildTimeSeconds": 120,
+    "maxPurchases": 1,
     "prerequisites": [ "pave_runway" ],
     "effects": [
       { "type": "add_taxi_exit", "runwayId": "rwy1", "kind": "standard" }
@@ -65,6 +83,7 @@
     "category": "stand",
     "cost": 6200,
     "buildTimeSeconds": 240,
+    "maxPurchases": 3,
     "prerequisites": [ "pave_runway", "runway_extension_1" ],
     "effects": [
       { "type": "add_stand", "standClass": "regional", "count": 2 }
@@ -77,6 +96,7 @@
     "category": "extension",
     "cost": 8200,
     "buildTimeSeconds": 240,
+    "maxPurchases": 1,
     "prerequisites": [ "pave_runway" ],
     "effects": [
       { "type": "extend_runway", "meters": 500 }
@@ -89,6 +109,7 @@
     "category": "surface",
     "cost": 12000,
     "buildTimeSeconds": 360,
+    "maxPurchases": 1,
     "prerequisites": [ "runway_extension_2" ],
     "effects": [
       { "type": "upgrade_surface", "from": "asphalt", "to": "concrete" }
@@ -101,6 +122,7 @@
     "category": "stand",
     "cost": 14000,
     "buildTimeSeconds": 420,
+    "maxPurchases": 3,
     "prerequisites": [ "concrete_upgrade" ],
     "effects": [
       { "type": "add_stand", "standClass": "narrowbody", "count": 2 }
@@ -113,6 +135,7 @@
     "category": "multiplier",
     "cost": 9500,
     "buildTimeSeconds": 300,
+    "maxPurchases": 1,
     "prerequisites": [ "pave_runway" ],
     "effects": [
       { "type": "multiplier", "target": "income", "value": 1.15 }
@@ -125,6 +148,7 @@
     "category": "runway",
     "cost": 24000,
     "buildTimeSeconds": 900,
+    "maxPurchases": 1,
     "prerequisites": [ "concrete_upgrade" ],
     "effects": [
       { "type": "add_runway", "lengthMeters": 2400, "surface": "concrete", "widthClass": "standard", "ops": "both" }
@@ -137,6 +161,7 @@
     "category": "taxiway",
     "cost": 5200,
     "buildTimeSeconds": 210,
+    "maxPurchases": 1,
     "prerequisites": [ "second_runway" ],
     "effects": [
       { "type": "add_taxi_exit", "runwayId": "rwy2", "kind": "rapid" }
@@ -149,6 +174,7 @@
     "category": "stand",
     "cost": 22000,
     "buildTimeSeconds": 780,
+    "maxPurchases": 2,
     "prerequisites": [ "second_runway", "concrete_upgrade" ],
     "effects": [
       { "type": "add_stand", "standClass": "widebody", "count": 1 }
@@ -161,6 +187,7 @@
     "category": "nav",
     "cost": 6800,
     "buildTimeSeconds": 240,
+    "maxPurchases": 1,
     "prerequisites": [ "pave_runway" ],
     "effects": [
       { "type": "unlock_nav", "capability": "night_ops" },
@@ -174,6 +201,7 @@
     "category": "stand",
     "cost": 12500,
     "buildTimeSeconds": 420,
+    "maxPurchases": 2,
     "prerequisites": [ "runway_extension_2" ],
     "effects": [
       { "type": "add_stand", "standClass": "regional", "count": 1 },

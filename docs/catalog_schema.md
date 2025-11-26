@@ -53,6 +53,9 @@ Required fields:
 - `effects` (array of effect objects): see below.
 - `tierUnlock` (int): progression gate at which it becomes available.
 
+Optional fields:
+- `maxPurchases` (int): how many times this upgrade can be bought. If omitted or <= 0, treated as unlimited. Prerequisites only require at least one purchase.
+
 Effect object shapes (union):
 - `{ "type": "add_stand", "standClass": "...", "count": int }`
 - `{ "type": "extend_runway", "meters": int }`

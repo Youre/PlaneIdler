@@ -79,3 +79,7 @@ func _process(delta: float) -> void:
 	dir = dir.normalized()
 	var step = min(speed_mps * delta, dist)
 	global_transform.origin += dir * step
+	# Orient aircraft along movement direction (XZ plane).
+	var flat_dir = Vector3(dir.x, 0, dir.z).normalized()
+	if flat_dir.length() > 0.001:
+		look_at(global_transform.origin + flat_dir, Vector3.UP)

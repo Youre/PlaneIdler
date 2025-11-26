@@ -3,7 +3,7 @@ extends Node
 class_name OllamaClient
 
 @export var base_url: String = "http://127.0.0.1:11434"
-@export var model: String = "gpt-oss:20b"
+@export var model: String = "qwen3:4b"
 
 var _http: HTTPRequest
 
@@ -19,6 +19,8 @@ func generate(prompt: String, custom_model: String = "", temperature: float = 0.
 		"model": use_model,
 		"prompt": prompt,
 		"stream": false,
+		"format": "json",
+		"think": false,
 		"options": {
 			"temperature": temperature,
 			"num_predict": max_tokens
@@ -34,20 +36,39 @@ func generate(prompt: String, custom_model: String = "", temperature: float = 0.
 	if status != 200:
 		return { "ok": false, "error": "HTTP %d" % status, "status": status }
 	var raw_text := raw_body.get_string_from_utf8()
+	var thinking_text: String = ""
+	var inner_json: Dictionary = {}
+	var inner_text: String = ""
+
 	var parsed = JSON.parse_string(raw_text)
-	var out_text := ""
-	var thinking_text := ""
-	if typeof(parsed) == TYPE_DICTIONARY:
-		if parsed.has("response"):
-			out_text = str(parsed["response"]).strip_edges()
-		if parsed.has("thinking"):
-			thinking_text = str(parsed["thinking"]).strip_edges()
-	# Fall back to raw body text only if we did not get a structured response.
-	if out_text == "":
-		out_text = raw_text.strip_edges()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return { "ok": false, "error": "Invalid JSON from Ollama", "raw": raw_text }
+
+	if parsed.has("thinking"):
+		thinking_text = str(parsed["thinking"]).strip_edges()
+
+	if not parsed.has("response"):
+		return { "ok": false, "error": "No 'response' field in Ollama reply", "raw": raw_text }
+
+	var resp_field = parsed["response"]
+	if typeof(resp_field) == TYPE_DICTIONARY:
+		inner_json = resp_field
+		inner_text = JSON.stringify(resp_field)
+	elif typeof(resp_field) == TYPE_STRING:
+		inner_text = String(resp_field).strip_edges()
+		var inner_parsed = JSON.parse_string(inner_text)
+		if typeof(inner_parsed) == TYPE_DICTIONARY:
+			inner_json = inner_parsed
+	else:
+		inner_text = str(resp_field)
+
+	if inner_text == "":
+		return { "ok": false, "error": "Empty 'response' field from Ollama", "raw": raw_text }
+
 	return {
 		"ok": true,
-		"text": out_text,
+		"text": inner_text,   # JSON string for the inner object
+		"json": inner_json,   # Parsed inner JSON object when available
 		"raw": raw_text,
 		"thinking": thinking_text
 	}

@@ -17,6 +17,7 @@ var _flyovers: Array = []
 var _flyby_timer: float = 0.0
 var _flyby_next: float = 60.0
 const CULL_DISTANCE: float = 650.0
+var _runways: Array = []
 
 func _ready() -> void:
 	randomize()
@@ -44,6 +45,15 @@ func set_stands(stand_nodes: Array) -> void:
 		var airport = get_parent().get_node_or_null("AirportRoot")
 		if airport:
 			runway = airport.get_node_or_null("Runway")
+	_runways.clear()
+	if runway != null:
+		_runways.append(runway)
+
+func register_runway(r: Runway) -> void:
+	if r == null:
+		return
+	if not _runways.has(r):
+		_runways.append(r)
 
 func _process(delta: float) -> void:
 	if sim_state == null:
@@ -60,20 +70,26 @@ func _process_arrivals(delta: float) -> void:
 	for aircraft in spawns:
 		var stand_class: String = aircraft.get("standClass", "ga_small")
 		var stand = stand_manager.find_free(stand_class)
-		var runway_ok = Eligibility.runway_ok(runway, aircraft)
+		var use_runway = _select_runway_for_aircraft(aircraft)
+		var runway_ok = use_runway != null
 		if stand and runway_ok:
 			# Reserve and apply effects immediately
 			stand_manager.occupy(stand, aircraft.get("dwellMinutes", {}))
 			_start_dwell_timer(stand, aircraft.get("dwellMinutes", {}))
-			stand.set_aircraft_marker(true, aircraft.get("displayName", "Aircraft"))
 			_log_arrival(aircraft, stand)
 			_add_income(aircraft)
 			# Visual animation
 			_spawn_actor_for_arrival(aircraft, stand)
-		else:
-			var reason = "no %s stand free" % stand_class if stand == null else "runway limits"
-			_log("[color=yellow]%s[/color] diverted (%s)" % [aircraft.get("displayName", "Aircraft"), reason], true)
-			_spawn_flyover(aircraft)
+
+func _select_runway_for_aircraft(aircraft: Dictionary) -> Runway:
+	if runway != null and Eligibility.runway_ok(runway, aircraft):
+		return runway
+	# fallback: check any additional runways we know about
+	for r in _runways:
+		if r != runway and Eligibility.runway_ok(r, aircraft):
+			return r
+	return null
+
 
 func _start_dwell_timer(stand: Stand, dwell_minutes: Dictionary) -> void:
 	var dur_min = dwell_minutes.get("min", 1)
@@ -91,7 +107,6 @@ func _process_dwell(delta: float) -> void:
 			var stand: Stand = entry["stand"]
 			if stand:
 				stand.set_occupied(false)
-				stand.set_aircraft_marker(false)
 				_log("%s departed from %s" % [stand.label, stand.stand_class])
 				_spawn_departure_actor(stand)
 		else:
@@ -109,9 +124,12 @@ func _add_income(aircraft: Dictionary) -> void:
 	var fees = aircraft.get("fees", {})
 	var landing = fees.get("landing", 0.0)
 	var dwell = fees.get("parkingPerMinute", 0.0) * float(aircraft.get("dwellMinutes", {}).get("min", 1))
-	sim_state.bank += landing + dwell
+	var amount = landing + dwell
+	if sim_state != null:
+		amount *= max(0.0, sim_state.income_multiplier)
+	sim_state.bank += amount
 	emit_signal("bank_changed", sim_state.bank)
-	_log("[color=green]+%.0f[/color] bank=%.0f" % [landing + dwell, sim_state.bank])
+	_log("[color=green]+%.0f[/color] bank=%.0f" % [amount, sim_state.bank])
 
 func _log(msg: String, to_console: bool = true) -> void:
 	if to_console and console_label:
