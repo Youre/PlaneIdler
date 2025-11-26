@@ -37,6 +37,12 @@ func _build_mesh() -> BoxMesh:
 	bm.size = Vector3(length_m, 0.5, width_m)
 	return bm
 
+func set_width(new_width: float) -> void:
+	width_m = new_width
+	if _mesh:
+		var bm := _build_mesh()
+		_mesh.mesh = bm
+
 func set_length(new_length: float) -> void:
 	length_m = new_length
 	if _mesh:

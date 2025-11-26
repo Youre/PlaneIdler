@@ -1,10 +1,12 @@
-[gd_scene load_steps=9 format=3 uid="uid://airport-root"]
+[gd_scene load_steps=13 format=3 uid="uid://airport-root"]
 
 [ext_resource type="Script" path="res://scripts/airport/runway.gd" id="2_8xxjk"]
 [ext_resource type="Script" path="res://scripts/airport/stand.gd" id="3_myjbn"]
 [ext_resource type="Script" path="res://scripts/airport/airport_manager.gd" id="4_xk9bg"]
 [ext_resource type="PackedScene" path="res://scenes/airport/Stand.tscn" id="5_yk6et"]
 [ext_resource type="Texture2D" path="res://assets/grass.jpg" id="6_tex"]
+[ext_resource type="Script" path="res://scripts/airport/tower.gd" id="7_tower"]
+[ext_resource type="Script" path="res://scripts/airport/fuel_station.gd" id="8_fuel"]
 
 [sub_resource type="StandardMaterial3D" id="ground_mat"]
 albedo_texture = ExtResource("6_tex")
@@ -13,7 +15,13 @@ uv1_scale = Vector3(16, 16, 1)
 roughness = 0.8
 
 [sub_resource type="PlaneMesh" id="ground_mesh"]
-size = Vector2(1200, 1200)
+size = Vector2(4800, 4800)
+
+[sub_resource type="BoxMesh" id="taxi_loop_mesh"]
+size = Vector3(200, 0.2, 6)
+
+[sub_resource type="BoxMesh" id="rapid_exit_mesh"]
+size = Vector3(120, 0.2, 6)
 
 [node name="Airport" type="Node3D"]
 script = ExtResource("4_xk9bg")
@@ -26,6 +34,8 @@ material_override = SubResource("ground_mat")
 
 [node name="Stands" type="Node3D" parent="."]
 
+[node name="Taxiways" type="Node3D" parent="."]
+
 [node name="Runway" type="Node3D" parent="."]
 script = ExtResource("2_8xxjk")
 position = Vector3(0, 0.1, 0)
@@ -34,3 +44,25 @@ width_m = 30.0
 heading_deg = 90.0
 surface = "grass"
 label = "09/27"
+
+[node name="Tower" type="Node3D" parent="."]
+visible = false
+script = ExtResource("7_tower")
+position = Vector3(-120, 0.1, -80)
+
+[node name="FuelStation" type="Node3D" parent="."]
+visible = false
+script = ExtResource("8_fuel")
+position = Vector3(0, 0.1, 55)
+
+[node name="TaxiLoop" type="MeshInstance3D" parent="."]
+visible = false
+mesh = SubResource("taxi_loop_mesh")
+position = Vector3(0, 0.11, 25)
+rotation = Vector3(0, 1.5707963, 0)
+
+[node name="RapidExit" type="MeshInstance3D" parent="."]
+visible = false
+mesh = SubResource("rapid_exit_mesh")
+position = Vector3(0, 0.11, -25)
+rotation = Vector3(0, 0.7853982, 0)

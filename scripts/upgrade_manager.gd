@@ -2,27 +2,31 @@ extends Node
 
 class_name UpgradeManager
 
-@export var sim: SimController
-@export var airport_manager: AirportManager
-@export var runway: Runway
-@export var console_label: RichTextLabel
-var owned_upgrades: Array = []
-var income_multiplier: float = 1.0
-var nav_capabilities := {}
-var current_tier: int = 0
-var active_construction: Array = []
-var purchase_counts := {}
+@export var sim: Node = null
+@export var airport_manager: Node = null
+@export var runway: Node = null
+@export var console_label: RichTextLabel = null
 
-func _ready() -> void:
+var owned_upgrades = []
+var income_multiplier = 1.0
+var nav_capabilities = {}
+var current_tier = 0
+var active_construction = []      # [{ id, remaining, total, upgrade }]
+var purchase_counts = {}
+
+func _ready():
 	set_process(true)
 
-func _process(delta: float) -> void:
+func _process(delta):
 	if active_construction.is_empty():
 		return
-	var scaled_dt := delta * (sim.time_scale if sim != null else 1.0)
-	var remaining: Array = []
+	var timescale = 1.0
+	if sim != null:
+		timescale = sim.time_scale
+	var scaled_dt = delta * timescale
+	var remaining = []
 	for entry in active_construction:
-		var rem: float = float(entry.get("remaining", 0.0)) - scaled_dt
+		var rem = float(entry.get("remaining", 0.0)) - scaled_dt
 		entry["remaining"] = rem
 		if rem <= 0.0:
 			_complete_construction(entry)
@@ -30,25 +34,24 @@ func _process(delta: float) -> void:
 			remaining.append(entry)
 	active_construction = remaining
 
-func get_available_upgrades(bank: float, only_affordable: bool = true) -> Array:
-	var result: Array = []
+func get_available_upgrades(bank, only_affordable = true):
+	var result = []
 	if sim == null or sim.sim_state == null:
 		return result
 	for u in sim.sim_state.upgrade_catalog:
 		if typeof(u) != TYPE_DICTIONARY:
 			continue
-		var id: String = str(u.get("id", ""))
+		var id = str(u.get("id", ""))
 		if id == "" or _is_under_construction(id):
 			continue
-		var max_purchases: int = int(u.get("maxPurchases", 1))
-		var count: int = int(purchase_counts.get(id, 0))
+		var max_purchases = int(u.get("maxPurchases", 1))
+		var count = int(purchase_counts.get(id, 0))
 		if max_purchases > 0 and count >= max_purchases:
 			continue
-		var tier: int = int(u.get("tierUnlock", 0))
+		var tier = int(u.get("tierUnlock", 0))
 		if tier > current_tier + 1:
-			# Soft gate: don't show upgrades more than one tier ahead.
 			continue
-		var cost: float = float(u.get("cost", 0.0))
+		var cost = float(u.get("cost", 0.0))
 		if only_affordable and cost > bank:
 			continue
 		if not _prereqs_satisfied(u):
@@ -60,14 +63,14 @@ func get_available_upgrades(bank: float, only_affordable: bool = true) -> Array:
 		})
 	return result
 
-func purchase(id: String) -> bool:
+func purchase(id):
 	if sim == null or sim.sim_state == null:
 		return false
 	var upgrade = _find_upgrade(id)
 	if upgrade.is_empty():
 		_log("[color=yellow]Unknown upgrade:[/color] %s" % id)
 		return false
-	var cost: float = float(upgrade.get("cost", 0.0))
+	var cost = float(upgrade.get("cost", 0.0))
 	if not _can_afford(cost):
 		_log("[color=yellow]Insufficient funds for %s[/color]" % upgrade.get("displayName", id))
 		return false
@@ -75,13 +78,13 @@ func purchase(id: String) -> bool:
 		_log("[color=yellow]Prerequisites not met for %s[/color]" % upgrade.get("displayName", id))
 		return false
 	_spend(cost)
-	var build_time: float = float(upgrade.get("buildTimeSeconds", 0.0))
+	var build_time = float(upgrade.get("buildTimeSeconds", 0.0))
 	if build_time <= 0.0:
 		_apply_upgrade_effects(upgrade)
 		_register_purchase_completion(id, upgrade)
 		_log("[color=lime]Purchased upgrade:[/color] %s (instant)" % upgrade.get("displayName", id))
 	else:
-		var entry: Dictionary = {
+		var entry = {
 			"id": id,
 			"remaining": build_time,
 			"total": build_time,
@@ -91,26 +94,14 @@ func purchase(id: String) -> bool:
 		_log("[color=lime]Construction started:[/color] %s (%.0fs)" % [upgrade.get("displayName", id), build_time])
 	return true
 
-func _can_afford(cost: float) -> bool:
+func _can_afford(cost):
 	return sim != null and sim.sim_state.bank >= cost
 
-func _spend(cost: float) -> void:
+func _spend(cost):
 	sim.sim_state.bank -= cost
 	sim.emit_signal("bank_changed", sim.sim_state.bank)
 
-func _max_runway_length() -> float:
-	if sim == null:
-		return runway.length_m if runway != null else 0.0
-	var max_len: float = 0.0
-	for ac in sim.sim_state.aircraft_catalog:
-		if typeof(ac) == TYPE_DICTIONARY and ac.has("runway"):
-			var r = ac["runway"]
-			var len = float(r.get("minLengthMeters", 0.0))
-			if len > max_len:
-				max_len = len
-	return max_len
-
-func _find_upgrade(id: String) -> Dictionary:
+func _find_upgrade(id):
 	if sim == null or sim.sim_state == null:
 		return {}
 	for u in sim.sim_state.upgrade_catalog:
@@ -120,7 +111,7 @@ func _find_upgrade(id: String) -> Dictionary:
 			return u
 	return {}
 
-func _prereqs_satisfied(upgrade: Dictionary) -> bool:
+func _prereqs_satisfied(upgrade):
 	var prereqs = upgrade.get("prerequisites", [])
 	if typeof(prereqs) != TYPE_ARRAY:
 		return true
@@ -129,30 +120,35 @@ func _prereqs_satisfied(upgrade: Dictionary) -> bool:
 			return false
 	return true
 
-func _is_under_construction(id: String) -> bool:
+func _is_under_construction(id):
 	for c in active_construction:
 		if str(c.get("id", "")) == id:
 			return true
 	return false
 
-func _complete_construction(entry: Dictionary) -> void:
-	var upgrade: Dictionary = entry.get("upgrade", {})
-	var id: String = str(entry.get("id", ""))
+func _complete_construction(entry):
+	var upgrade = entry.get("upgrade", {})
+	var id = str(entry.get("id", ""))
 	_apply_upgrade_effects(upgrade)
 	_register_purchase_completion(id, upgrade)
 	_log("[color=lime]Construction complete:[/color] %s" % upgrade.get("displayName", id))
 
-func _register_purchase_completion(id: String, upgrade: Dictionary) -> void:
-	var prev: int = int(purchase_counts.get(id, 0))
+func _register_purchase_completion(id, upgrade):
+	var prev = int(purchase_counts.get(id, 0))
 	purchase_counts[id] = prev + 1
 	if not owned_upgrades.has(id):
 		owned_upgrades.append(id)
 	_update_tier_from_upgrade(upgrade)
+	if sim != null and sim.sim_state != null:
+		var utier = int(upgrade.get("tierUnlock", -1))
+		if utier >= 0:
+			var cur = int(sim.sim_state.tier_upgrade_counts.get(utier, 0))
+			sim.sim_state.tier_upgrade_counts[utier] = cur + 1
 
-func get_construction_entries() -> Array:
-	var out: Array = []
+func get_construction_entries():
+	var out = []
 	for c in active_construction:
-		var up: Dictionary = c.get("upgrade", {})
+		var up = c.get("upgrade", {})
 		out.append({
 			"id": c.get("id", ""),
 			"name": up.get("displayName", c.get("id", "")),
@@ -161,21 +157,22 @@ func get_construction_entries() -> Array:
 		})
 	return out
 
-func _update_tier_from_upgrade(upgrade: Dictionary) -> void:
-	var tier: int = int(upgrade.get("tierUnlock", -1))
+func _update_tier_from_upgrade(upgrade):
+	var tier = int(upgrade.get("tierUnlock", -1))
 	if tier >= 0 and tier > current_tier:
 		current_tier = tier
 		if sim != null and sim.sim_state != null:
 			sim.sim_state.progression_tier = current_tier
 
-func _apply_upgrade_effects(upgrade: Dictionary) -> void:
+func _apply_upgrade_effects(upgrade):
+	var id = str(upgrade.get("id", ""))
 	var effects = upgrade.get("effects", [])
 	if typeof(effects) != TYPE_ARRAY:
 		return
 	for e in effects:
 		if typeof(e) != TYPE_DICTIONARY:
 			continue
-		var t: String = str(e.get("type", ""))
+		var t = str(e.get("type", ""))
 		match t:
 			"add_stand":
 				_effect_add_stand(e)
@@ -191,55 +188,83 @@ func _apply_upgrade_effects(upgrade: Dictionary) -> void:
 				_effect_add_taxi_exit(e)
 			"unlock_nav":
 				_effect_unlock_nav(e)
+			"widen_runway":
+				_effect_widen_runway(e)
 			_:
 				_log("[color=gray]Unhandled upgrade effect type:[/color] %s" % t)
 
-func _effect_add_stand(effect: Dictionary) -> void:
+	if id == "tower_upgrade":
+		if sim != null and sim.sim_state != null:
+			sim.sim_state.nav_capabilities["atc"] = true
+		if airport_manager != null:
+			var tower = airport_manager.get_node_or_null("Tower")
+			if tower:
+				tower.visible = true
+	if id == "fuel_farm" and airport_manager != null:
+		var fuel = airport_manager.get_node_or_null("FuelStation")
+		if fuel:
+			fuel.visible = true
+
+func _effect_widen_runway(effect):
 	if airport_manager == null:
 		return
-	var stand_class: String = str(effect.get("standClass", "ga_small"))
-	var count: int = int(effect.get("count", 1))
+	var min_width = float(effect.get("minWidthMeters", 45.0))
+	if min_width <= 0.0:
+		return
+	if airport_manager.has_method("widen_runways"):
+		airport_manager.widen_runways(min_width)
+	elif runway != null and runway.width_m < min_width:
+		runway.set_width(min_width)
+
+func _effect_add_stand(effect):
+	if airport_manager == null:
+		return
+	var stand_class = str(effect.get("standClass", "ga_small"))
+	var count = int(effect.get("count", 1))
 	if count <= 0:
 		return
 	airport_manager.add_stands(stand_class, count)
+	if sim != null and airport_manager.has_method("get_stands"):
+		var stands = airport_manager.get_stands()
+		if stands.size() > 0:
+			sim.set_stands(stands)
 	_log("Added %d %s stand(s)" % [count, stand_class])
 
-func _effect_extend_runway(effect: Dictionary) -> void:
+func _effect_extend_runway(effect):
 	if runway == null:
 		return
-	var meters: float = float(effect.get("meters", 0.0))
+	var meters = float(effect.get("meters", 0.0))
 	if meters <= 0.0:
 		return
 	runway.set_length(runway.length_m + meters)
 	_log("Extended runway by %dm" % int(meters))
 	_recenter_camera()
 
-func _effect_multiplier(effect: Dictionary) -> void:
-	var target: String = str(effect.get("target", ""))
-	var value: float = float(effect.get("value", 1.0))
+func _effect_multiplier(effect):
+	var target = str(effect.get("target", ""))
+	var value = float(effect.get("value", 1.0))
 	if value <= 0.0:
 		return
 	if sim == null or sim.sim_state == null:
 		return
-	match target:
-		"income":
-			if sim.sim_state.income_multiplier <= 0.0:
-				sim.sim_state.income_multiplier = 1.0
-			sim.sim_state.income_multiplier *= value
-			_log("Income multiplier updated to x%.2f" % sim.sim_state.income_multiplier)
-		"arrival_rate":
-			if sim.sim_state.traffic_rate_multiplier <= 0.0:
-				sim.sim_state.traffic_rate_multiplier = 1.0
-			sim.sim_state.traffic_rate_multiplier *= value
-			_log("Traffic rate multiplier updated to x%.2f" % sim.sim_state.traffic_rate_multiplier)
-		_:
-			_log("[color=gray]Unsupported multiplier target:[/color] %s" % target)
+	if target == "income":
+		if sim.sim_state.income_multiplier <= 0.0:
+			sim.sim_state.income_multiplier = 1.0
+		sim.sim_state.income_multiplier *= value
+		_log("Income multiplier updated to x%.2f" % sim.sim_state.income_multiplier)
+	elif target == "arrival_rate":
+		if sim.sim_state.traffic_rate_multiplier <= 0.0:
+			sim.sim_state.traffic_rate_multiplier = 1.0
+		sim.sim_state.traffic_rate_multiplier *= value
+		_log("Traffic rate multiplier updated to x%.2f" % sim.sim_state.traffic_rate_multiplier)
+	else:
+		_log("[color=gray]Unsupported multiplier target:[/color] %s" % target)
 
-func _effect_upgrade_surface(effect: Dictionary) -> void:
+func _effect_upgrade_surface(effect):
 	if runway == null:
 		return
-	var from_surface: String = str(effect.get("from", ""))
-	var to_surface: String = str(effect.get("to", ""))
+	var from_surface = str(effect.get("from", ""))
+	var to_surface = str(effect.get("to", ""))
 	if to_surface == "":
 		return
 	if from_surface != "" and runway.surface != from_surface:
@@ -248,14 +273,14 @@ func _effect_upgrade_surface(effect: Dictionary) -> void:
 	runway.update_surface(to_surface)
 	_log("Runway surface upgraded to %s" % to_surface)
 
-func _effect_add_runway(effect: Dictionary) -> void:
+func _effect_add_runway(effect):
 	if airport_manager == null:
 		return
-	var length_m: float = float(effect.get("lengthMeters", 0.0))
-	var surface: String = str(effect.get("surface", "asphalt"))
-	var width_class: String = str(effect.get("widthClass", "standard"))
-	var ops: String = str(effect.get("ops", "both"))
-	var new_runway := airport_manager.add_parallel_runway(80.0)
+	var length_m = float(effect.get("lengthMeters", 0.0))
+	var surface = str(effect.get("surface", "asphalt"))
+	var width_class = str(effect.get("widthClass", "standard"))
+	var ops = str(effect.get("ops", "both"))
+	var new_runway = airport_manager.add_parallel_runway(80.0)
 	if new_runway == null:
 		return
 	if length_m > 0.0:
@@ -268,26 +293,31 @@ func _effect_add_runway(effect: Dictionary) -> void:
 		if sim.sim_state != null:
 			if sim.sim_state.traffic_rate_multiplier <= 0.0:
 				sim.sim_state.traffic_rate_multiplier = 1.0
-			# Second runway significantly boosts traffic capacity.
 			sim.sim_state.traffic_rate_multiplier *= 1.4
 			_log("Traffic rate multiplier updated to x%.2f (second runway)" % sim.sim_state.traffic_rate_multiplier)
 	_log("Additional runway built (%s ops)" % ops)
 	_recenter_camera()
 
-func _effect_add_taxi_exit(effect: Dictionary) -> void:
-	var runway_id: String = str(effect.get("runwayId", ""))
-	var kind: String = str(effect.get("kind", "standard"))
+func _effect_add_taxi_exit(effect):
+	var runway_id = str(effect.get("runwayId", ""))
+	var kind = str(effect.get("kind", "standard"))
 	_log("Added taxi exit on %s (%s)" % [runway_id, kind])
-	# Approximate benefit: small boost to traffic throughput.
+	if airport_manager != null:
+		var node_name = "RapidExit" if kind == "rapid" else "TaxiLoop"
+		var node = airport_manager.get_node_or_null(node_name)
+		if node:
+			node.visible = true
 	if sim != null and sim.sim_state != null:
 		if sim.sim_state.traffic_rate_multiplier <= 0.0:
 			sim.sim_state.traffic_rate_multiplier = 1.0
-		var bonus := (1.05 if kind == "standard" else 1.1)
+		var bonus = 1.05
+		if kind == "rapid":
+			bonus = 1.1
 		sim.sim_state.traffic_rate_multiplier *= bonus
 		_log("Traffic rate multiplier updated to x%.2f (taxiway)" % sim.sim_state.traffic_rate_multiplier)
 
-func _effect_unlock_nav(effect: Dictionary) -> void:
-	var capability: String = str(effect.get("capability", ""))
+func _effect_unlock_nav(effect):
+	var capability = str(effect.get("capability", ""))
 	if capability == "":
 		return
 	nav_capabilities[capability] = true
@@ -295,13 +325,13 @@ func _effect_unlock_nav(effect: Dictionary) -> void:
 		sim.sim_state.nav_capabilities[capability] = true
 	_log("Navigation capability unlocked: %s" % capability)
 
-func _log(msg: String) -> void:
+func _log(msg):
 	if console_label:
 		console_label.append_text(msg + "\n")
 		console_label.scroll_to_line(console_label.get_line_count())
 	print(msg)
 
-func _recenter_camera() -> void:
+func _recenter_camera():
 	var root = get_parent()
 	if root and root.has_method("_position_camera"):
 		root._position_camera()

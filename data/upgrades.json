@@ -19,7 +19,7 @@
     "cost": 7000,
     "buildTimeSeconds": 240,
     "maxPurchases": 1,
-    "prerequisites": [ "runway_extension_1" ],
+    "prerequisites": [ "runway_extension_1", "taxi_loop" ],
     "effects": [
       { "type": "multiplier", "target": "arrival_rate", "value": 1.25 }
     ],
@@ -102,6 +102,45 @@
       { "type": "extend_runway", "meters": 500 }
     ],
     "tierUnlock": 2
+  },
+  {
+    "id": "runway_extension_3",
+    "displayName": "Extend Runway +1200 m",
+    "category": "extension",
+    "cost": 15000,
+    "buildTimeSeconds": 360,
+    "maxPurchases": 1,
+    "prerequisites": [ "runway_extension_2" ],
+    "effects": [
+      { "type": "extend_runway", "meters": 1200 }
+    ],
+    "tierUnlock": 3
+  },
+  {
+    "id": "runway_extension_4",
+    "displayName": "Extend Runway +1500 m",
+    "category": "extension",
+    "cost": 22000,
+    "buildTimeSeconds": 480,
+    "maxPurchases": 1,
+    "prerequisites": [ "runway_extension_3" ],
+    "effects": [
+      { "type": "extend_runway", "meters": 1500 }
+    ],
+    "tierUnlock": 4
+  },
+  {
+    "id": "runway_widening",
+    "displayName": "Widen Runways to 45 m",
+    "category": "extension",
+    "cost": 18000,
+    "buildTimeSeconds": 420,
+    "maxPurchases": 1,
+    "prerequisites": [ "concrete_upgrade" ],
+    "effects": [
+      { "type": "widen_runway", "minWidthMeters": 45 }
+    ],
+    "tierUnlock": 3
   },
   {
     "id": "concrete_upgrade",

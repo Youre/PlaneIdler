@@ -12,8 +12,12 @@ var _current_index: int = 0
 var _active: bool = false
 var _arrival_done_callback: Callable
 var _departure_done_callback: Callable
+var _idle_time: float = 0.0
+var _age: float = 0.0
+var _max_lifetime: float = -1.0
 
 func _ready() -> void:
+	set_process(true)
 	_mesh = MeshInstance3D.new()
 	var box := BoxMesh.new()
 	box.size = Vector3(6, 3, 12)
@@ -36,13 +40,35 @@ func set_color(c: Color) -> void:
 		var mat: StandardMaterial3D = _mesh.material_override
 		mat.albedo_color = c
 
+func set_category_color(category: String) -> void:
+	# Small: shades of green, Medium: shades of red, Large: shades of blue.
+	var hue: float
+	match category:
+		"small":
+			# Green-ish range.
+			hue = randf_range(0.25, 0.38)
+		"medium":
+			# Red-ish range.
+			hue = randf_range(0.0, 0.05)
+		"large":
+			# Blue-ish range.
+			hue = randf_range(0.55, 0.68)
+		_:
+			hue = randf()
+	var sat = randf_range(0.6, 0.9)
+	var val = randf_range(0.7, 1.0)
+	set_color(Color.from_hsv(hue, sat, val))
+
 func start_path(points: Array, on_complete: Callable) -> void:
 	if points.size() < 2:
 		return
 	path = points
 	_current_index = 0
 	_arrival_done_callback = on_complete
+	_departure_done_callback = Callable() # clear any old departure callback
 	_active = true
+	_idle_time = 0.0
+	_age = 0.0
 	global_transform.origin = points[0]
 
 func depart(points: Array, on_complete: Callable) -> void:
@@ -51,8 +77,15 @@ func depart(points: Array, on_complete: Callable) -> void:
 	path = points
 	_current_index = 0
 	_departure_done_callback = on_complete
+	_arrival_done_callback = Callable() # clear any old arrival callback
 	_active = true
+	_idle_time = 0.0
+	_age = 0.0
 	global_transform.origin = points[0]
+
+func set_lifetime(seconds: float) -> void:
+	_max_lifetime = seconds
+	_age = 0.0
 
 func set_divert_visual() -> void:
 	if _mesh and _mesh.material_override:
@@ -63,6 +96,8 @@ func set_divert_visual() -> void:
 func _process(delta: float) -> void:
 	if not _active or path.size() < 2:
 		return
+	_age += delta
+	var prev_pos: Vector3 = global_transform.origin
 	var target = path[_current_index + 1]
 	var dir = target - global_transform.origin
 	var dist = dir.length()
@@ -79,6 +114,32 @@ func _process(delta: float) -> void:
 	dir = dir.normalized()
 	var step = min(speed_mps * delta, dist)
 	global_transform.origin += dir * step
+	var moved: float = (global_transform.origin - prev_pos).length()
+	if moved < 0.01:
+		_idle_time += delta
+	else:
+		_idle_time = 0.0
+	# Safety: if the actor has been "active" but effectively stationary
+	# for several seconds, trigger completion so SimController can
+	# clean up its references and we don't accumulate stuck aircraft.
+	if _idle_time > 5.0:
+		_active = false
+		if _arrival_done_callback and _departure_done_callback == null:
+			_arrival_done_callback.call()
+		elif _departure_done_callback:
+			_departure_done_callback.call()
+		else:
+			queue_free()
+		return
+	# Hard lifetime cap as a safety net in case something else goes wrong.
+	if _max_lifetime > 0.0 and _age >= _max_lifetime:
+		_active = false
+		if _arrival_done_callback and _departure_done_callback == null:
+			_arrival_done_callback.call()
+		elif _departure_done_callback:
+			_departure_done_callback.call()
+		else:
+			queue_free()
 	# Orient aircraft along movement direction (XZ plane).
 	var flat_dir = Vector3(dir.x, 0, dir.z).normalized()
 	if flat_dir.length() > 0.001:

@@ -10,6 +10,7 @@ var income_multiplier: float = 1.0
 var nav_capabilities := {}
 var progression_tier: int = 0
 var traffic_rate_multiplier: float = 1.0
+var tier_upgrade_counts := {}
 
 var active_arrivals: Array = []
 var active_parking: Array = []
