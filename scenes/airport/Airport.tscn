@@ -39,6 +39,9 @@ visible = false
 
 [node name="Taxiways" type="Node3D" parent="."]
 
+[node name="RunwayLights" type="Node3D" parent="."]
+visible = false
+
 [node name="Runway" type="Node3D" parent="."]
 script = ExtResource("2_8xxjk")
 position = Vector3(0, 0.1, 0)

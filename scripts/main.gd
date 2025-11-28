@@ -10,6 +10,7 @@ extends Node3D
 @onready var upgrade_mgr = $Upgrades
 @onready var llm_agent = $LLM
 @onready var sun: DirectionalLight3D = $Sun
+@onready var sun_visual: MeshInstance3D = $SunVisual
 @onready var sim_clock_label: Label = $UI/HUD/SimClock
 
 var aircraft_catalog: Array = []
@@ -75,6 +76,10 @@ func _ready() -> void:
 	var debug_btn = $UI/HUD.get_node_or_null("DebugAddCash")
 	if debug_btn:
 		debug_btn.connect("pressed", Callable(self, "_on_debug_add_cash"))
+	# The visible sun sphere is only a sky indicator; it should
+	# not cast shadows onto the world.
+	if sun_visual:
+		sun_visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 func _process(delta: float) -> void:
 	_build_queue_accum += delta
@@ -147,26 +152,123 @@ func _update_lighting(delta: float) -> void:
 	# Daylight: warm, brighter. Night: cool, dim "moonlight".
 	var day_color := Color(1.0, 0.96, 0.9)
 	var night_color := Color(0.6, 0.7, 1.0)
+	var dawn_dusk_color := Color(1.0, 0.8, 0.6)
 	var day_energy := 1.3
 	var night_energy := 0.25
-	sun.light_color = night_color.lerp(day_color, blend)
+	var base_color := night_color.lerp(day_color, blend)
+	# Add a subtle reddish tint near sunrise (06:00–08:00) and
+	# sunset (18:00–20:00) to simulate dawn/dusk.
+	var dawn_start := sunrise_min
+	var dawn_end := sunrise_min + 120.0  # 06:00–08:00
+	var dusk_start := sunset_min - 120.0 # 18:00–20:00
+	var dusk_end := sunset_min
+	var tint_strength := 0.0
+	if clock_minutes >= dawn_start and clock_minutes <= dawn_end:
+		tint_strength = 1.0 - abs((clock_minutes - (dawn_start + dawn_end) * 0.5) / 60.0)
+	elif clock_minutes >= dusk_start and clock_minutes <= dusk_end:
+		tint_strength = 1.0 - abs((clock_minutes - (dusk_start + dusk_end) * 0.5) / 60.0)
+	tint_strength = clamp(tint_strength, 0.0, 1.0)
+	if tint_strength > 0.0:
+		base_color = base_color.lerp(dawn_dusk_color, 0.35 * tint_strength)
+	sun.light_color = base_color
 	sun.light_energy = lerp(night_energy, day_energy, blend)
-	# Animate light direction over a full "day" so that the sun/moon
-	# appears to move across the sky.
+	# Animate light direction for sun (06:00�?"20:00) and moon (20:00�?"06:00)
+	# so shadows move across the field throughout the full day/night cycle.
 	var minutes_per_day := 1440.0
-	var phase := fposmod(clock_minutes, minutes_per_day) / minutes_per_day # 0..1
-	# Map phase so that:
-	#  - 0.0 (midnight)   -> below horizon on one side
-	#  - 0.25 (06:00)     -> low on horizon (sunrise)
-	#  - 0.5 (noon)       -> high overhead
-	#  - 0.75 (18:00)     -> low on horizon (sunset)
-	var elevation := sin(phase * TAU) * deg_to_rad(60.0)
-	var azimuth := deg_to_rad(45.0) # fixed azimuth for simplicity
-	# Build a basis from yaw (around Y) then pitch (around X).
+	var day_start := sunrise_min
+	var day_end := sunset_min
 	var basis := Basis()
-	basis = basis.rotated(Vector3.UP, azimuth)
-	basis = basis.rotated(Vector3.RIGHT, elevation)
+	if clock_minutes >= day_start and clock_minutes <= day_end:
+		# Day arc: sun rises at 06:00, highest near mid-day, sets at 20:00.
+		var day_span: float = float(day_end - day_start) # 14 hours
+		var t: float = (clock_minutes - day_start) / max(day_span, 0.001) # 0..1
+		var elevation := sin(t * PI) * deg_to_rad(65.0)
+		var azimuth := deg_to_rad(60.0) # fixed azimuth for sun
+		basis = Basis() # identity
+		basis = basis.rotated(Vector3.UP, azimuth)
+		# Pitch around the *local* X axis after yaw so the sun
+		# rises higher in the sky at mid-day.
+		basis = basis.rotated(basis.x, elevation)
+	else:
+		# Night arc: moon travels during the remaining 10 hours.
+		var night_total: float = minutes_per_day - float(day_end - day_start) # 10 hours
+		var night_minutes: float
+		if clock_minutes > day_end:
+			night_minutes = clock_minutes - day_end      # 20:00�?"24:00
+		else:
+			night_minutes = clock_minutes + (minutes_per_day - day_end) # 00:00�?"06:00
+		var t_night: float = night_minutes / max(night_total, 0.001) # 0..1
+		var elevation_n := sin(t_night * PI) * deg_to_rad(35.0)
+		# Put the moon roughly opposite the sun in the sky box.
+		var azimuth_n := deg_to_rad(240.0)
+		basis = Basis()
+		basis = basis.rotated(Vector3.UP, azimuth_n)
+		basis = basis.rotated(basis.x, elevation_n)
 	sun.transform.basis = basis
+	# Position a visible sun sphere far away in the sky in the
+	# opposite direction of the light, so players can see where
+	# the sun/moon currently is.
+	if sun_visual:
+		var dir := -sun.transform.basis.z.normalized()
+		var radius := 4000.0
+		var origin := dir * radius
+		sun_visual.global_transform.origin = origin
+	# Override the light orientation and sun visual using a more
+	# explicit direction vector so that lighting always comes from
+	# above the scene rather than from below or the side.
+	_fix_light_direction()
+
+func _fix_light_direction() -> void:
+	if sun == null:
+		return
+	var clock_minutes: float = 0.0
+	if sim != null and sim.sim_state != null:
+		clock_minutes = sim.sim_state.clock_minutes
+	var sunrise_min := 6.0 * 60.0
+	var sunset_min := 20.0 * 60.0
+	var minutes_per_day := 1440.0
+	var day_start := sunrise_min
+	var day_end := sunset_min
+
+	var dir: Vector3 = Vector3(0, -1, 0) # default: straight down
+	if clock_minutes >= day_start and clock_minutes <= day_end:
+		# Daytime sun path.
+		var day_span: float = float(day_end - day_start)
+		var t_day: float = (clock_minutes - day_start) / max(day_span, 0.001)
+		var elevation := sin(t_day * PI) * deg_to_rad(65.0)
+		var azimuth := deg_to_rad(60.0)
+		dir = _sun_direction_from_angles(azimuth, elevation)
+	else:
+		# Nighttime moon path.
+		var night_total: float = minutes_per_day - float(day_end - day_start)
+		var night_minutes: float
+		if clock_minutes > day_end:
+			night_minutes = clock_minutes - day_end
+		else:
+			night_minutes = clock_minutes + (minutes_per_day - day_end)
+		var t_night: float = night_minutes / max(night_total, 0.001)
+		var elevation_n := sin(t_night * PI) * deg_to_rad(35.0)
+		var azimuth_n := deg_to_rad(240.0)
+		dir = _sun_direction_from_angles(azimuth_n, elevation_n)
+
+	# Ensure light comes from above (negative Y in light direction).
+	if dir.y < 0.0:
+		dir.y = -dir.y
+	dir = dir.normalized()
+
+	# Directional light: -Z is the light direction.
+	sun.transform.basis = Basis().looking_at(-dir, Vector3.UP)
+
+	if sun_visual:
+		var radius := 4000.0
+		sun_visual.global_transform.origin = dir * radius
+
+func _sun_direction_from_angles(azimuth: float, elevation: float) -> Vector3:
+	var cos_e := cos(elevation)
+	var x := cos(azimuth) * cos_e
+	var y := sin(elevation)
+	var z := sin(azimuth) * cos_e
+	return Vector3(x, y, z).normalized()
 
 func _on_bank_changed(value: float) -> void:
 	if bank_label:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://cn680eaa8r3xm"]
+[gd_scene load_steps=14 format=3 uid="uid://cn680eaa8r3xm"]
 
 [ext_resource type="Script" uid="uid://7srku83i56d3" path="res://scripts/main.gd" id="1_jc6uw"]
 [ext_resource type="PackedScene" path="res://scenes/airport/Airport.tscn" id="2_ny6nj"]
@@ -11,6 +11,17 @@
 [ext_resource type="PackedScene" path="res://scenes/actors/AircraftActor.tscn" id="9_2w6gd"]
 [ext_resource type="Script" uid="uid://dft0lcibylnqe" path="res://scripts/upgrade_manager.gd" id="10_k2t0s"]
 [ext_resource type="Script" uid="uid://byi51xp6gb8mq" path="res://scripts/llm_agent.gd" id="11_cit2v"]
+
+[sub_resource type="SphereMesh" id="1_sun_mesh"]
+radius = 40.0
+height_segments = 24
+radial_segments = 32
+
+[sub_resource type="StandardMaterial3D" id="2_sun_mat"]
+albedo_color = Color(1, 0.9, 0.6, 1)
+emission_enabled = true
+emission = Color(1, 0.9, 0.6, 1)
+emission_energy = 2.0
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_jc6uw")
@@ -48,6 +59,11 @@ shadow_enabled = true
 shadow_bias = 0.02
 directional_shadow_mode = 1
 directional_shadow_max_distance = 1200.0
+
+[node name="SunVisual" type="MeshInstance3D" parent="."]
+mesh = SubResource("1_sun_mesh")
+material_override = SubResource("2_sun_mat")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2000, 0)
 
 [node name="AirportRoot" parent="." instance=ExtResource("2_ny6nj")]
 

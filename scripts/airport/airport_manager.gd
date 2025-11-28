@@ -18,12 +18,19 @@ var _taxi_material: StandardMaterial3D = null
 @onready var stands_container: Node3D = $Stands
 @onready var taxiways_container: Node3D = $Taxiways
 @onready var hangars_container: Node3D = $Hangars
+@onready var lights_container: Node3D = $RunwayLights
 
 func _ready() -> void:
 	randomize()
 	_runway = get_node_or_null("Runway")
 	if _runway != null:
 		_randomize_heading()
+		# Align any static helper nodes (like the fuel station)
+		# with the runway heading so everything shares a common
+		# orientation.
+		var fuel = get_node_or_null("FuelStation")
+		if fuel:
+			fuel.rotation.y = deg_to_rad(_runway.heading_deg)
 		_runways.append(_runway)
 	_build_initial_layout()
 
@@ -271,6 +278,92 @@ func _get_taxi_material() -> StandardMaterial3D:
 		_taxi_material.albedo_color = Color(0.30, 0.30, 0.32)
 		_taxi_material.roughness = 0.8
 	return _taxi_material
+
+func build_runway_lights() -> void:
+	if lights_container == null or _runway == null:
+		return
+	for c in lights_container.get_children():
+		c.queue_free()
+	lights_container.visible = true
+	_build_runway_lights_for_runway(_runway)
+	for r in _runways:
+		if r != null and r != _runway:
+			_build_runway_lights_for_runway(r)
+
+func _build_runway_lights_for_runway(runway: Runway) -> void:
+	if runway == null or lights_container == null:
+		return
+	var half_len: float = runway.length_m * 0.5
+	if half_len <= 0.0:
+		return
+	var width: float = runway.width_m
+	var edge_z: float = width * 0.5 + 0.2
+	var margin: float = min(80.0, half_len * 0.35)
+	var spacing: float = 120.0
+	if runway.length_m < 600.0:
+		spacing = 80.0
+	var x := -half_len + margin
+	while x <= half_len - margin:
+		_spawn_edge_light(runway, Vector3(x, 0.1, edge_z))
+		_spawn_edge_light(runway, Vector3(x, 0.1, -edge_z))
+		x += spacing
+	# Simple PAPI-style row near one threshold on the "left" side.
+	var papi_x := -half_len + margin * 0.5
+	var papi_base := Vector3(papi_x, 0.1, -edge_z - 6.0)
+	for i in range(4):
+		_spawn_papi_light(runway, papi_base + Vector3(float(i) * 4.0, 0, 0))
+
+func _spawn_edge_light(runway: Runway, local_pos: Vector3) -> void:
+	var light := OmniLight3D.new()
+	light.light_color = Color(1.0, 0.95, 0.8)
+	light.light_energy = 0.9
+	light.omni_range = 80.0
+	var mi := MeshInstance3D.new()
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = 0.25
+	mesh.bottom_radius = 0.25
+	mesh.height = 0.6
+	mi.mesh = mesh
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.9, 0.9, 1.0)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 1.0, 1.0)
+	mat.emission_energy = 1.0
+	mi.material_override = mat
+	var root := Node3D.new()
+	root.add_child(mi)
+	root.add_child(light)
+	var xf := runway.global_transform * Transform3D.IDENTITY
+	xf.origin = runway.to_global(local_pos)
+	root.global_transform = xf
+	lights_container.add_child(root)
+
+func _spawn_papi_light(runway: Runway, local_pos: Vector3) -> void:
+	var light := SpotLight3D.new()
+	light.light_color = Color(1.0, 0.7, 0.6)
+	light.light_energy = 1.4
+	light.spot_range = 120.0
+	light.spot_angle = 18.0
+	light.spot_attenuation = 1.0
+	var mi := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(1.2, 0.7, 0.8)
+	mi.mesh = mesh
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(1.0, 0.7, 0.6)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 0.6, 0.4)
+	mat.emission_energy = 1.2
+	mi.material_override = mat
+	var root := Node3D.new()
+	root.add_child(mi)
+	root.add_child(light)
+	# Aim the PAPI lights along the runway approach direction.
+	var local_xf := Transform3D.IDENTITY
+	local_xf.origin = local_pos
+	var xf := runway.global_transform * local_xf
+	root.global_transform = xf
+	lights_container.add_child(root)
 
 func _build_taxi_for_runway(runway: Runway, stands: Array) -> void:
 	if runway == null:

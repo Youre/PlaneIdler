@@ -206,6 +206,9 @@ func _apply_upgrade_effects(upgrade):
 		var fuel = airport_manager.get_node_or_null("FuelStation")
 		if fuel:
 			fuel.visible = true
+	if id == "ils_lighting" and airport_manager != null:
+		if airport_manager.has_method("build_runway_lights"):
+			airport_manager.build_runway_lights()
 	if id.begins_with("ga_hangar_fbo") and airport_manager != null:
 		var hangars = airport_manager.get_node_or_null("Hangars")
 		if hangars:
