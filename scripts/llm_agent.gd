@@ -20,6 +20,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if sim == null or upgrade_manager == null or ollama == null:
 		return
+	# CEO is off duty at night; no chatting or purchases.
+	if sim.sim_state != null and not sim.sim_state.is_daytime():
+		return
 	_timer += delta
 	var interval: float = base_interval / max(sim.time_scale, 0.01)
 	if _timer >= interval and not _busy:
@@ -42,6 +45,8 @@ func _choose_personality() -> void:
 
 func _consider() -> void:
 	if _busy:
+		return
+	if sim != null and sim.sim_state != null and not sim.sim_state.is_daytime():
 		return
 	_busy = true
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://cn680eaa8r3xm"]
+[gd_scene load_steps=15 format=3 uid="uid://cn680eaa8r3xm"]
 
 [ext_resource type="Script" uid="uid://7srku83i56d3" path="res://scripts/main.gd" id="1_jc6uw"]
 [ext_resource type="PackedScene" path="res://scenes/airport/Airport.tscn" id="2_ny6nj"]
@@ -11,6 +11,8 @@
 [ext_resource type="PackedScene" path="res://scenes/actors/AircraftActor.tscn" id="9_2w6gd"]
 [ext_resource type="Script" uid="uid://dft0lcibylnqe" path="res://scripts/upgrade_manager.gd" id="10_k2t0s"]
 [ext_resource type="Script" uid="uid://byi51xp6gb8mq" path="res://scripts/llm_agent.gd" id="11_cit2v"]
+[ext_resource type="Script" path="res://scripts/ui/income_chart.gd" id="12_income"]
+[ext_resource type="Script" path="res://scripts/ui/traffic_chart.gd" id="13_traffic"]
 
 [sub_resource type="SphereMesh" id="1_sun_mesh"]
 radius = 40.0
@@ -211,12 +213,40 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -120.0
+offset_left = -220.0
 offset_top = -40.0
 offset_right = -16.0
 offset_bottom = -16.0
 grow_horizontal = 0
 text = "00:00"
+
+[node name="IncomeChart" type="Control" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = -120.0
+offset_right = -140.0
+offset_bottom = -50.0
+grow_horizontal = 0
+script = ExtResource("12_income")
+
+[node name="TrafficChart" type="Control" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = -190.0
+offset_right = -140.0
+offset_bottom = -120.0
+grow_horizontal = 0
+script = ExtResource("13_traffic")
 
 [node name="Console" type="RichTextLabel" parent="UI/HUD"]
 layout_mode = 1

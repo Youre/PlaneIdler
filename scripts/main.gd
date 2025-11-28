@@ -12,11 +12,15 @@ extends Node3D
 @onready var sun: DirectionalLight3D = $Sun
 @onready var sun_visual: MeshInstance3D = $SunVisual
 @onready var sim_clock_label: Label = $UI/HUD/SimClock
+@onready var income_chart: IncomeChart = $UI/HUD/IncomeChart
+@onready var traffic_chart: TrafficChart = $UI/HUD/TrafficChart
 
 var aircraft_catalog: Array = []
 var upgrade_catalog: Array = []
 var _build_queue_accum: float = 0.0
 var _cam_time: float = 0.0
+var _last_income_chart_data: Array = []
+var _last_income_chart_bank: float = -1.0
 
 func _ready() -> void:
 	set_process(true)
@@ -90,6 +94,29 @@ func _process(delta: float) -> void:
 	_update_camera(delta)
 	_update_lighting(delta)
 	_refresh_clock()
+	# Update income chart with latest daily income data.
+	if income_chart and sim and sim.sim_state:
+		var data: Array = sim.sim_state.get_recent_daily_income()
+		var bank: float = sim.sim_state.bank
+		if data != _last_income_chart_data or bank != _last_income_chart_bank:
+			var last_day: float = data.back() if data.size() > 0 else 0.0
+			_log("Income chart updated | days=%d last_day=%.0f bank=%.0f" % [
+				data.size(),
+				last_day,
+				bank
+			])
+			_last_income_chart_data = data.duplicate()
+			_last_income_chart_bank = bank
+		income_chart.set_data(data, bank)
+	# Update traffic chart with received vs missed counts.
+	if traffic_chart and sim and sim.sim_state:
+		var received: Array[float] = []
+		for v in sim.sim_state.get_recent_daily_received():
+			received.append(float(v))
+		var missed: Array[float] = []
+		for v in sim.sim_state.get_recent_daily_missed():
+			missed.append(float(v))
+		traffic_chart.set_data(received, missed)
 
 func _log(message: String) -> void:
 	if console_label:
@@ -298,6 +325,7 @@ func _on_debug_add_cash() -> void:
 		return
 	var amount: float = 5000.0
 	sim.sim_state.bank += amount
+	sim.sim_state.add_income(amount)
 	sim.emit_signal("bank_changed", sim.sim_state.bank)
 	_log("[color=green]+%.0f[/color] debug cash added; bank=%.0f" % [amount, sim.sim_state.bank])
 	_refresh_airport_status()
@@ -367,7 +395,13 @@ func _refresh_airport_status() -> void:
 func _refresh_clock() -> void:
 	if sim_clock_label == null or sim == null or sim.sim_state == null:
 		return
-	sim_clock_label.text = sim.sim_state.get_clock_hhmm()
+	var day: int = sim.sim_state.get_day_index()
+	var time_str: String = sim.sim_state.get_clock_hhmm()
+	sim_clock_label.text = "Day %d  %s" % [day, time_str]
+
+func _refresh_income_chart() -> void:
+	# No-op: chart is driven directly from _process via set_data.
+	pass
 
 func _on_upgrade_activated(index: int) -> void:
 	if upgrades_list == null or upgrade_mgr == null:

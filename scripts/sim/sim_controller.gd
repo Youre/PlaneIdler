@@ -21,13 +21,13 @@ var _runways: Array = []
 var _stand_actors: Dictionary = {} # Stand -> AircraftActor
 var _cleanup_accum: float = 0.0
 var _runway_busy: bool = false
-var _arrival_queue: Array = []
-var _departure_queue: Array = []
+var _runway_queue: Array = [] # FIFO of { "type": "arrival"/"departure", "entry": any }
 var _fbo_slots_total: int = 0
 var _fbo_slots_used: int = 0
 var _fbo_classes: Array = [] # e.g. ["ga", "all"]
 var _fbo_fee_base: float = 0.0
 var _fbo_stands: Dictionary = {} # Stand -> bool (uses FBO)
+var _pattern_entries: Array = [] # [{ "aircraft": Dictionary, "actor": AircraftActor }]
 
 func _ready() -> void:
 	randomize()
@@ -87,6 +87,7 @@ func _process(delta: float) -> void:
 	_process_arrivals(scaled_dt)
 	_process_dwell(scaled_dt)
 	_process_flyby(scaled_dt)
+	_update_pattern_flights(scaled_dt)
 	_cull_far_actors()
 	_cleanup_accum += scaled_dt
 	if _cleanup_accum >= 10.0:
@@ -124,7 +125,7 @@ func _process_dwell(delta: float) -> void:
 			var stand: Stand = entry["stand"]
 			if stand:
 				if _runway_busy:
-					_departure_queue.append(stand)
+					_runway_queue.append({ "type": "departure", "entry": stand })
 				else:
 					_runway_busy = true
 					_spawn_departure_actor(stand)
@@ -139,6 +140,71 @@ func _process_flyby(delta: float) -> void:
 		_flyby_timer = 0.0
 		_flyby_next = randf_range(45.0, 90.0)
 
+func _update_pattern_flights(delta: float) -> void:
+	# Advance any aircraft flying an ATC holding / traffic pattern.
+	for entry in _pattern_entries.duplicate():
+		var actor: AircraftActor = entry.get("actor", null)
+		if actor == null or not is_instance_valid(actor):
+			continue
+		# Track holding time in simulation minutes; divert after 30.
+		if sim_state:
+			var rate := sim_state.DAY_RATE_MIN_PER_SEC if sim_state.is_daytime() else sim_state.NIGHT_RATE_MIN_PER_SEC
+			entry["wait_minutes"] = float(entry.get("wait_minutes", 0.0)) + delta * rate
+			if float(entry["wait_minutes"]) >= 30.0:
+				var aircraft: Dictionary = entry.get("aircraft", {})
+				_log_diversion(aircraft, "holding timeout (30 min)")
+				sim_state.add_missed()
+				if actor and is_instance_valid(actor):
+					actor.queue_free()
+				for rq in _runway_queue.duplicate():
+					if rq.get("type", "") == "arrival" and rq.get("entry", null) == entry:
+						_runway_queue.erase(rq)
+				if _pattern_entries.has(entry):
+					_pattern_entries.erase(entry)
+				continue
+		var pts: Array = entry.get("points", [])
+		if pts.size() < 2:
+			continue
+		# If the actor currently has no active path, restart the loop.
+		if not actor._active:
+			# No special completion callback; AircraftActor will set
+			# _active = false when it reaches the last point, and the
+			# next update will start another loop if still queued.
+			actor.start_path(pts, Callable())
+
+func _enqueue_pattern_arrival(aircraft: Dictionary) -> void:
+	# When ATC is available and the runway is busy, create a visual
+	# aircraft flying a simple rectangular traffic pattern around
+	# the airport while it waits for its turn to land.
+	if aircraft_scene == null or runway == null:
+		_runway_queue.append({ "type": "arrival", "entry": aircraft })
+		return
+	var actor: AircraftActor = aircraft_scene.instantiate()
+	get_parent().add_child(actor)
+	actor.speed_mps = 55.0
+	if actor is AircraftActor:
+		var aa: AircraftActor = actor
+		aa.set_category_color(_class_category_for_aircraft(aircraft))
+	# Define a simple pattern in runway-local space: upwind, crosswind,
+	# downwind, base, final. We'll loop this pattern until the aircraft
+	# is dequeued for landing.
+	var pattern_points: Array = []
+	var center := runway.global_transform.origin
+	var fwd := runway.global_transform.basis.x.normalized()
+	var right := runway.global_transform.basis.z.normalized()
+	var alt := 45.0
+	var leg_long := 450.0
+	var leg_short := 220.0
+	pattern_points.append(center + fwd * (-leg_long * 0.5) + right * (leg_short) + Vector3(0, alt, 0)) # upwind
+	pattern_points.append(center + fwd * (leg_long * 0.5) + right * (leg_short) + Vector3(0, alt, 0))  # crosswind
+	pattern_points.append(center + fwd * (leg_long * 0.5) + right * (-leg_short) + Vector3(0, alt, 0)) # downwind
+	pattern_points.append(center + fwd * (-leg_long * 0.5) + right * (-leg_short) + Vector3(0, alt, 0))# base
+	pattern_points.append(pattern_points[0])
+
+	var entry := { "aircraft": aircraft, "actor": actor, "points": pattern_points, "t": 0.0, "wait_minutes": 0.0 }
+	_pattern_entries.append(entry)
+	_runway_queue.append({ "type": "arrival", "entry": entry })
+
 func _handle_arrival_request(aircraft: Dictionary) -> void:
 	var stand_class: String = aircraft.get("standClass", "ga_small")
 	var dwell_minutes: Dictionary = aircraft.get("dwellMinutes", {})
@@ -150,7 +216,7 @@ func _handle_arrival_request(aircraft: Dictionary) -> void:
 		_spawn_flyover(aircraft)
 		return
 	if _runway_busy and _has_atc():
-		_arrival_queue.append(aircraft)
+		_enqueue_pattern_arrival(aircraft)
 		return
 	var stand: Stand = stand_manager.find_free(stand_class)
 	if stand and not _runway_busy:
@@ -158,6 +224,8 @@ func _handle_arrival_request(aircraft: Dictionary) -> void:
 		stand_manager.occupy(stand, dwell_minutes)
 		_start_dwell_timer(stand, dwell_minutes)
 		_log_arrival(aircraft, stand)
+		if sim_state:
+			sim_state.add_received()
 		_add_income(aircraft)
 		_try_fbo_service(aircraft, stand)
 		_runway_busy = true
@@ -177,6 +245,8 @@ func _handle_arrival_request(aircraft: Dictionary) -> void:
 		else:
 			reason = "capacity unavailable"
 		_log_diversion(aircraft, reason)
+		if sim_state:
+			sim_state.add_missed()
 		_spawn_flyover(aircraft)
 
 func _has_atc() -> bool:
@@ -191,7 +261,8 @@ func _add_income(aircraft: Dictionary) -> void:
 	var amount = landing + dwell
 	if sim_state != null:
 		amount *= max(0.0, sim_state.income_multiplier)
-	sim_state.bank += amount
+		sim_state.bank += amount
+		sim_state.add_income(amount)
 	emit_signal("bank_changed", sim_state.bank)
 	_log("[color=green]+%.0f[/color] bank=%.0f" % [amount, sim_state.bank])
 
@@ -334,6 +405,16 @@ func _cull_far_actors() -> void:
 		if actor.is_inside_tree() and actor.global_transform.origin.distance_to(center) > CULL_DISTANCE:
 			actor.queue_free()
 			_flyovers.erase(actor)
+	# Pattern actors are also stored in _pattern_entries; prune any that
+	# drift too far from the field.
+	for entry in _pattern_entries.duplicate():
+		var pat_actor: AircraftActor = entry.get("actor", null)
+		if pat_actor == null or not is_instance_valid(pat_actor):
+			_pattern_entries.erase(entry)
+			continue
+		if pat_actor.is_inside_tree() and pat_actor.global_transform.origin.distance_to(center) > CULL_DISTANCE * 1.5:
+			pat_actor.queue_free()
+			_pattern_entries.erase(entry)
 
 func _cleanup_stale_actors() -> void:
 	# As a last resort, remove any aircraft actors that are no longer
@@ -358,6 +439,17 @@ func _cleanup_stale_actors() -> void:
 			var aa2: AircraftActor = actor
 			if not aa2._active:
 				_safe_free_actor(actor, _flyovers)
+	# Clean up pattern actors as well.
+	for entry in _pattern_entries.duplicate():
+		var pat_actor: AircraftActor = entry.get("actor", null)
+		if pat_actor == null or not is_instance_valid(pat_actor):
+			_pattern_entries.erase(entry)
+			continue
+		if pat_actor is AircraftActor:
+			var paa: AircraftActor = pat_actor
+			if not paa._active:
+				paa.queue_free()
+				_pattern_entries.erase(entry)
 	# If runway is marked busy but no active aircraft remain, release it
 	# so queued arrivals/departures are not blocked forever.
 	if _runway_busy:
@@ -375,13 +467,26 @@ func _cleanup_stale_actors() -> void:
 func _service_runway_queue() -> void:
 	if _runway_busy:
 		return
-	# Landings have priority when ATC is available.
-	if _arrival_queue.size() > 0 and _has_atc():
-		var aircraft: Dictionary = _arrival_queue.pop_front()
-		_handle_arrival_request(aircraft)
+	if _runway_queue.size() == 0:
 		return
-	if _departure_queue.size() > 0:
-		var stand: Stand = _departure_queue.pop_front()
+	var job = _runway_queue.pop_front()
+	var kind: String = str(job.get("type", ""))
+	if kind == "arrival":
+		var entry = job.get("entry", null)
+		if typeof(entry) == TYPE_DICTIONARY:
+			var aircraft: Dictionary = entry.get("aircraft", {})
+			var actor: AircraftActor = entry.get("actor", null)
+			# Clean up the pattern actor now that this flight is cleared to land.
+			if actor and is_instance_valid(actor):
+				actor.queue_free()
+			if _pattern_entries.has(entry):
+				_pattern_entries.erase(entry)
+			if not aircraft.is_empty():
+				_handle_arrival_request(aircraft)
+		elif typeof(entry) == TYPE_DICTIONARY:
+			_handle_arrival_request(entry)
+	elif kind == "departure":
+		var stand: Stand = job.get("entry", null)
 		if stand != null:
 			_runway_busy = true
 			_spawn_departure_actor(stand)
@@ -424,6 +529,7 @@ func _try_fbo_service(aircraft: Dictionary, stand: Stand) -> void:
 	if extra_fee > 0.0 and sim_state != null:
 		extra_fee *= max(0.0, sim_state.income_multiplier)
 		sim_state.bank += extra_fee
+		sim_state.add_income(extra_fee)
 		emit_signal("bank_changed", sim_state.bank)
 	_log("[color=green]%s used FBO hangar[/color] (+%.0f)" % [
 		aircraft.get("displayName", "Aircraft"),
