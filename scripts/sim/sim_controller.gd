@@ -215,6 +215,13 @@ func _handle_arrival_request(aircraft: Dictionary) -> void:
 		_log_diversion(aircraft, reason)
 		_spawn_flyover(aircraft)
 		return
+	# If runway is busy and there's no ATC to sequence traffic, divert with a clear reason.
+	if _runway_busy and not _has_atc():
+		_log_diversion(aircraft, "runway in use and no ATC to hold pattern")
+		if sim_state:
+			sim_state.add_missed()
+		_spawn_flyover(aircraft)
+		return
 	if _runway_busy and _has_atc():
 		_enqueue_pattern_arrival(aircraft)
 		return
@@ -241,9 +248,12 @@ func _handle_arrival_request(aircraft: Dictionary) -> void:
 			elif free <= 0:
 				reason = "all %s stands occupied (%d total)" % [stand_class, total]
 			else:
-				reason = "capacity unavailable"
+				reason = "parking capacity unavailable (%s)" % stand_class
+			# If runway is also busy (rare after earlier checks), note it.
+			if _runway_busy:
+				reason += "; runway currently in use"
 		else:
-			reason = "capacity unavailable"
+			reason = "no stand manager available to allocate parking"
 		_log_diversion(aircraft, reason)
 		if sim_state:
 			sim_state.add_missed()
