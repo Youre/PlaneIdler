@@ -40,14 +40,14 @@
   },
   {
     "id": "runway_extension_1",
-    "displayName": "Extend Runway +300 m",
+    "displayName": "Extend Runway +400 m",
     "category": "extension",
     "cost": 4500,
     "buildTimeSeconds": 120,
     "maxPurchases": 1,
     "prerequisites": [],
     "effects": [
-      { "type": "extend_runway", "meters": 300 }
+      { "type": "extend_runway", "meters": 400 }
     ],
     "tierUnlock": 0
   },
