@@ -182,6 +182,24 @@
     "tierUnlock": 2
   },
   {
+    "id": "ga_hangar_fbo_1",
+    "displayName": "GA Hangars + FBO (2 Bays)",
+    "category": "facility",
+    "cost": 9000,
+    "buildTimeSeconds": 300,
+    "maxPurchases": 3,
+    "prerequisites": [ "ga_stand_pack_1", "taxi_loop" ],
+    "effects": [
+      {
+        "type": "add_hangar",
+        "slots": 2,
+        "serviceClass": "ga",
+        "fboFee": 150
+      }
+    ],
+    "tierUnlock": 1
+  },
+  {
     "id": "second_runway",
     "displayName": "Build Second Runway",
     "category": "runway",

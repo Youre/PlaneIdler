@@ -23,6 +23,11 @@ var _cleanup_accum: float = 0.0
 var _runway_busy: bool = false
 var _arrival_queue: Array = []
 var _departure_queue: Array = []
+var _fbo_slots_total: int = 0
+var _fbo_slots_used: int = 0
+var _fbo_classes: Array = [] # e.g. ["ga", "all"]
+var _fbo_fee_base: float = 0.0
+var _fbo_stands: Dictionary = {} # Stand -> bool (uses FBO)
 
 func _ready() -> void:
 	randomize()
@@ -42,6 +47,20 @@ func _ready() -> void:
 func set_catalogs(aircraft: Array, upgrades: Array) -> void:
 	sim_state.aircraft_catalog = aircraft
 	sim_state.upgrade_catalog = upgrades
+
+func register_hangar_slots(slots: int, service_class: String, fee_per_use: float) -> void:
+	if slots <= 0:
+		return
+	_fbo_slots_total += slots
+	if fee_per_use > 0.0:
+		if _fbo_fee_base <= 0.0:
+			_fbo_fee_base = fee_per_use
+		else:
+			_fbo_fee_base = max(_fbo_fee_base, fee_per_use)
+	var cls = service_class.strip_edges()
+	if cls != "":
+		if not _fbo_classes.has(cls):
+			_fbo_classes.append(cls)
 
 func set_stands(stand_nodes: Array) -> void:
 	stand_manager.register_stands(stand_nodes)
@@ -140,6 +159,7 @@ func _handle_arrival_request(aircraft: Dictionary) -> void:
 		_start_dwell_timer(stand, dwell_minutes)
 		_log_arrival(aircraft, stand)
 		_add_income(aircraft)
+		_try_fbo_service(aircraft, stand)
 		_runway_busy = true
 		_spawn_actor_for_arrival(aircraft, stand)
 	else:
@@ -227,6 +247,10 @@ func _spawn_departure_actor(stand: Stand) -> void:
 		if stand:
 			stand.set_occupied(false)
 			_log("%s departed from %s" % [stand.label, stand.stand_class])
+			if _fbo_stands.has(stand):
+				_fbo_stands.erase(stand)
+				if _fbo_slots_used > 0:
+					_fbo_slots_used -= 1
 		_runway_busy = false
 		_service_runway_queue()
 	)
@@ -361,6 +385,50 @@ func _service_runway_queue() -> void:
 		if stand != null:
 			_runway_busy = true
 			_spawn_departure_actor(stand)
+
+func _eligible_for_fbo(aircraft: Dictionary) -> bool:
+	var cls: String = str(aircraft.get("class", "ga_small"))
+	var stand_class: String = str(aircraft.get("standClass", "ga_small"))
+	var is_ga := stand_class.begins_with("ga") or cls == "ga_small" or cls == "turboprop"
+	if _fbo_classes.is_empty():
+		return is_ga
+	for c in _fbo_classes:
+		if c == "all":
+			return true
+		if c == "ga" and is_ga:
+			return true
+		if c == cls or c == stand_class:
+			return true
+	return false
+
+func _try_fbo_service(aircraft: Dictionary, stand: Stand) -> void:
+	if _fbo_slots_total <= 0:
+		return
+	if _fbo_slots_used >= _fbo_slots_total:
+		return
+	if stand == null:
+		return
+	if not _eligible_for_fbo(aircraft):
+		return
+	# Rough chance that an arriving aircraft opts for FBO service.
+	var want_service_chance := 0.35
+	if randf() > want_service_chance:
+		return
+	_fbo_slots_used += 1
+	_fbo_stands[stand] = true
+	var extra_fee := _fbo_fee_base
+	# If aircraft defines its own maintenance fee, prefer that.
+	var fees = aircraft.get("fees", {})
+	if typeof(fees) == TYPE_DICTIONARY and fees.has("fboService"):
+		extra_fee = float(fees.get("fboService", extra_fee))
+	if extra_fee > 0.0 and sim_state != null:
+		extra_fee *= max(0.0, sim_state.income_multiplier)
+		sim_state.bank += extra_fee
+		emit_signal("bank_changed", sim_state.bank)
+	_log("[color=green]%s used FBO hangar[/color] (+%.0f)" % [
+		aircraft.get("displayName", "Aircraft"),
+		extra_fee
+	])
 
 func _class_category_for_aircraft(aircraft: Dictionary) -> String:
 	var cls: String = str(aircraft.get("class", ""))

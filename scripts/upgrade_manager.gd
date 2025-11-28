@@ -190,6 +190,8 @@ func _apply_upgrade_effects(upgrade):
 				_effect_unlock_nav(e)
 			"widen_runway":
 				_effect_widen_runway(e)
+			"add_hangar":
+				_effect_add_hangar(e)
 			_:
 				_log("[color=gray]Unhandled upgrade effect type:[/color] %s" % t)
 
@@ -204,6 +206,10 @@ func _apply_upgrade_effects(upgrade):
 		var fuel = airport_manager.get_node_or_null("FuelStation")
 		if fuel:
 			fuel.visible = true
+	if id.begins_with("ga_hangar_fbo") and airport_manager != null:
+		var hangars = airport_manager.get_node_or_null("Hangars")
+		if hangars:
+			hangars.visible = true
 
 func _effect_widen_runway(effect):
 	if airport_manager == null:
@@ -229,6 +235,18 @@ func _effect_add_stand(effect):
 		if stands.size() > 0:
 			sim.set_stands(stands)
 	_log("Added %d %s stand(s)" % [count, stand_class])
+
+func _effect_add_hangar(effect):
+	var slots = int(effect.get("slots", 0))
+	if slots <= 0:
+		return
+	var service_class = str(effect.get("serviceClass", "ga"))
+	var fbo_fee = float(effect.get("fboFee", 0.0))
+	if airport_manager != null and airport_manager.has_method("add_hangars"):
+		airport_manager.add_hangars(slots)
+	if sim != null and sim.has_method("register_hangar_slots"):
+		sim.register_hangar_slots(slots, service_class, fbo_fee)
+	_log("Added %d hangar bay(s) with FBO service" % slots)
 
 func _effect_extend_runway(effect):
 	if runway == null:
@@ -303,10 +321,20 @@ func _effect_add_taxi_exit(effect):
 	var kind = str(effect.get("kind", "standard"))
 	_log("Added taxi exit on %s (%s)" % [runway_id, kind])
 	if airport_manager != null:
+		# Enable the procedural taxiway network once any taxiway
+		# upgrade is purchased, so we don't show taxiways before
+		# the first upgrade.
+		if airport_manager.has_method("set_taxiways_enabled"):
+			airport_manager.set_taxiways_enabled(true)
+		# Legacy visual helpers for taxi loop / rapid exit.
+		# Align them with the runway so they appear parallel
+		# instead of crossing at odd angles.
 		var node_name = "RapidExit" if kind == "rapid" else "TaxiLoop"
 		var node = airport_manager.get_node_or_null(node_name)
 		if node:
 			node.visible = true
+			if runway != null:
+				node.rotation.y = runway.rotation.y
 	if sim != null and sim.sim_state != null:
 		if sim.sim_state.traffic_rate_multiplier <= 0.0:
 			sim.sim_state.traffic_rate_multiplier = 1.0
