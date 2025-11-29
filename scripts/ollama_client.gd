@@ -3,7 +3,7 @@ extends Node
 class_name OllamaClient
 
 @export var base_url: String = "http://127.0.0.1:11434"
-@export var model: String = "qwen3:4b"
+@export var model: String = "qwen3:1.7b"
 
 var _http: HTTPRequest
 
