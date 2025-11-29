@@ -397,7 +397,16 @@ func _refresh_clock() -> void:
 		return
 	var day: int = sim.sim_state.get_day_index()
 	var time_str: String = sim.sim_state.get_clock_hhmm()
-	sim_clock_label.text = "Day %d  %s" % [day, time_str]
+	var total_seconds: float = sim.sim_state.time_seconds
+	var total_str: String = _format_total_time(total_seconds)
+	sim_clock_label.text = "Day %d | %s | %s" % [day, time_str, total_str]
+
+func _format_total_time(seconds: float) -> String:
+	var total_secs := int(seconds)
+	var hours := total_secs / 3600
+	var minutes := (total_secs / 60) % 60
+	var secs := total_secs % 60
+	return "T+%02d:%02d:%02d" % [hours, minutes, secs]
 
 func _refresh_income_chart() -> void:
 	# No-op: chart is driven directly from _process via set_data.

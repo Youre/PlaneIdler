@@ -45,7 +45,7 @@ visible = false
 [node name="Runway" type="Node3D" parent="."]
 script = ExtResource("2_8xxjk")
 position = Vector3(0, 0.1, 0)
-length_m = 500.0
+length_m = 600.0
 width_m = 30.0
 heading_deg = 90.0
 surface = "grass"
