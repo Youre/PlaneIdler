@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://cn680eaa8r3xm"]
+[gd_scene load_steps=16 format=3 uid="uid://cn680eaa8r3xm"]
 
 [ext_resource type="Script" uid="uid://7srku83i56d3" path="res://scripts/main.gd" id="1_jc6uw"]
 [ext_resource type="PackedScene" path="res://scenes/airport/Airport.tscn" id="2_ny6nj"]
@@ -24,6 +24,13 @@ albedo_color = Color(1, 0.9, 0.6, 1)
 emission_enabled = true
 emission = Color(1, 0.9, 0.6, 1)
 emission_energy = 2.0
+
+[sub_resource type="StyleBoxFlat" id="3_console_bg"]
+bg_color = Color(0.15, 0.15, 0.15, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_jc6uw")
@@ -258,6 +265,7 @@ offset_top = -180.0
 offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/normal = SubResource("3_console_bg")
 bbcode_enabled = true
 text = "[b]Console[/b]\\nInitialized."
 scroll_following = true

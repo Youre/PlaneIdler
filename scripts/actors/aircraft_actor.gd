@@ -59,6 +59,41 @@ func set_category_color(category: String) -> void:
 	var val = randf_range(0.7, 1.0)
 	set_color(Color.from_hsv(hue, sat, val))
 
+func set_visual_profile(category: String, width_class: String) -> void:
+	# Adjust the proxy mesh size so different aircraft categories feel distinct.
+	var box: BoxMesh = _mesh.mesh if _mesh else null
+	if box == null or not (box is BoxMesh):
+		return
+	var size := _size_for(category, width_class)
+	box.size = size
+
+func _size_for(category: String, width_class: String) -> Vector3:
+	# Base sizes roughly scaled to category; width class tweaks lateral span.
+	var length := 12.0
+	var width := 6.0
+	var height := 3.0
+	match category:
+		"medium":
+			length = 18.0
+			width = 8.0
+			height = 3.5
+		"large":
+			length = 26.0
+			width = 12.0
+			height = 4.0
+		_:
+			pass
+	match width_class:
+		"wide":
+			width *= 1.25
+			length *= 1.15
+		"standard":
+			width *= 1.05
+			length *= 1.05
+		_:
+			pass
+	return Vector3(width, height, length)
+
 func start_path(points: Array, on_complete: Callable) -> void:
 	if points.size() < 2:
 		return

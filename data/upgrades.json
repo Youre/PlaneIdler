@@ -42,7 +42,7 @@
     "id": "runway_extension_1",
     "displayName": "Extend Runway +400 m",
     "category": "extension",
-    "cost": 4500,
+    "cost": 2500,
     "buildTimeSeconds": 120,
     "maxPurchases": 1,
     "prerequisites": [],

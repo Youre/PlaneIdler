@@ -90,6 +90,8 @@ func _process(delta: float) -> void:
 	_update_pattern_flights(scaled_dt)
 	_cull_far_actors()
 	_cleanup_accum += scaled_dt
+
+
 	if _cleanup_accum >= 10.0:
 		_cleanup_accum = 0.0
 		_cleanup_stale_actors()
@@ -109,12 +111,12 @@ func _select_runway_for_aircraft(aircraft: Dictionary) -> Runway:
 	return null
 
 
-func _start_dwell_timer(stand: Stand, dwell_minutes: Dictionary) -> void:
+func _start_dwell_timer(stand: Stand, dwell_minutes: Dictionary, aircraft: Dictionary) -> void:
 	var dur_min = dwell_minutes.get("min", 1)
 	var dur_max = dwell_minutes.get("max", 3)
 	# Speed up departures for testing (scale down)
 	var dwell_seconds = randf_range(float(dur_min) * 15.0, float(dur_max) * 30.0)
-	var timer_entry = { "stand": stand, "remaining": dwell_seconds }
+	var timer_entry = { "stand": stand, "remaining": dwell_seconds, "aircraft": aircraft }
 	_dwell_timers.append(timer_entry)
 
 func _process_dwell(delta: float) -> void:
@@ -125,10 +127,10 @@ func _process_dwell(delta: float) -> void:
 			var stand: Stand = entry["stand"]
 			if stand:
 				if _runway_busy:
-					_runway_queue.append({ "type": "departure", "entry": stand })
+					_runway_queue.append({ "type": "departure", "entry": stand, "aircraft": entry.get("aircraft", {}) })
 				else:
 					_runway_busy = true
-					_spawn_departure_actor(stand)
+					_spawn_departure_actor(stand, entry.get("aircraft", {}))
 		else:
 			still_active.append(entry)
 	_dwell_timers = still_active
@@ -229,7 +231,7 @@ func _handle_arrival_request(aircraft: Dictionary) -> void:
 	if stand and not _runway_busy:
 		# Reserve and apply effects immediately
 		stand_manager.occupy(stand, dwell_minutes)
-		_start_dwell_timer(stand, dwell_minutes)
+		_start_dwell_timer(stand, dwell_minutes, aircraft)
 		_log_arrival(aircraft, stand)
 		if sim_state:
 			sim_state.add_received()
@@ -293,7 +295,9 @@ func _spawn_actor_for_arrival(aircraft: Dictionary, stand: Stand) -> void:
 		_actors.append(actor)
 		_stand_actors[stand] = actor
 		# Apply color scheme based on aircraft size category for new actors.
-		actor.set_category_color(_class_category_for_aircraft(aircraft))
+		var cat = _class_category_for_aircraft(aircraft)
+		actor.set_category_color(cat)
+		actor.set_visual_profile(cat, _width_class_for_aircraft(aircraft))
 	var fwd = runway.global_transform.basis.x.normalized() # runway length axis
 	var right = runway.global_transform.basis.z.normalized()
 	var start = runway.global_transform.origin - fwd * 250.0 + Vector3(0, 12, 0)
@@ -306,7 +310,7 @@ func _spawn_actor_for_arrival(aircraft: Dictionary, stand: Stand) -> void:
 		_service_runway_queue()
 	)
 
-func _spawn_departure_actor(stand: Stand) -> void:
+func _spawn_departure_actor(stand: Stand, aircraft: Dictionary) -> void:
 	if aircraft_scene == null or runway == null:
 		return
 	var actor: AircraftActor = _stand_actors.get(stand, null)
@@ -317,6 +321,9 @@ func _spawn_departure_actor(stand: Stand) -> void:
 		_actors.append(actor)
 	else:
 		actor.speed_mps = 35.0
+		var cat2 = _class_category_for_aircraft(aircraft)
+		actor.set_category_color(cat2)
+		actor.set_visual_profile(cat2, _width_class_for_aircraft(aircraft))
 	actor.set_lifetime(10.0)
 	var fwd = runway.global_transform.basis.x.normalized()
 	var start = stand.global_transform.origin + Vector3(0, 0.5, 0)
@@ -359,7 +366,9 @@ func _spawn_flyover(aircraft: Dictionary) -> void:
 	actor.set_divert_visual()
 	if actor is AircraftActor:
 		var aa: AircraftActor = actor
-		aa.set_category_color(_class_category_for_aircraft(aircraft))
+		var cat3 = _class_category_for_aircraft(aircraft)
+		aa.set_category_color(cat3)
+		aa.set_visual_profile(cat3, _width_class_for_aircraft(aircraft))
 		aa.set_lifetime(30.0)
 	var dir = 1.0 if randf() > 0.5 else -1.0
 	var lateral_sign = 1.0 if randf() > 0.5 else -1.0
@@ -384,6 +393,7 @@ func _spawn_flyby() -> void:
 	if actor is AircraftActor:
 		var aa: AircraftActor = actor
 		aa.set_category_color("large")
+		aa.set_visual_profile("large", "wide")
 		aa.set_lifetime(30.0)
 	var dir = 1.0 if randf() > 0.5 else -1.0
 	var lateral_sign = 1.0 if randf() > 0.5 else -1.0
@@ -499,7 +509,8 @@ func _service_runway_queue() -> void:
 		var stand: Stand = job.get("entry", null)
 		if stand != null:
 			_runway_busy = true
-			_spawn_departure_actor(stand)
+			var ac: Dictionary = job.get("aircraft", {})
+			_spawn_departure_actor(stand, ac)
 
 func _eligible_for_fbo(aircraft: Dictionary) -> bool:
 	var cls: String = str(aircraft.get("class", "ga_small"))
@@ -559,6 +570,12 @@ func _class_category_for_aircraft(aircraft: Dictionary) -> String:
 	if is_large:
 		return "large"
 	return "small"
+
+func _width_class_for_aircraft(aircraft: Dictionary) -> String:
+	var runway_req = aircraft.get("runway", {})
+	if typeof(runway_req) == TYPE_DICTIONARY:
+		return str(runway_req.get("widthClass", "narrow"))
+	return "narrow"
 
 func _cruise_altitude_for_aircraft(aircraft: Dictionary, base_min: float, base_max: float) -> float:
 	var cls: String = str(aircraft.get("class", "ga_small"))

@@ -3,10 +3,20 @@
     "id": "c172",
     "displayName": "Cessna 172",
     "class": "ga_small",
-    "fees": { "landing": 120, "parkingPerMinute": 2 },
-    "runway": { "minLengthMeters": 450, "surface": "grass", "widthClass": "narrow" },
+    "fees": {
+      "landing": 120,
+      "parkingPerMinute": 2
+    },
+    "runway": {
+      "minLengthMeters": 450,
+      "surface": "grass",
+      "widthClass": "narrow"
+    },
     "standClass": "ga_small",
-    "dwellMinutes": { "min": 2, "max": 6 },
+    "dwellMinutes": {
+      "min": 2,
+      "max": 5
+    },
     "spawnWeight": 1.6,
     "tierUnlock": 0,
     "mtowKg": 1111
@@ -15,10 +25,20 @@
     "id": "sr22",
     "displayName": "Cirrus SR22",
     "class": "ga_small",
-    "fees": { "landing": 180, "parkingPerMinute": 3 },
-    "runway": { "minLengthMeters": 500, "surface": "grass", "widthClass": "narrow" },
+    "fees": {
+      "landing": 180,
+      "parkingPerMinute": 3
+    },
+    "runway": {
+      "minLengthMeters": 500,
+      "surface": "grass",
+      "widthClass": "narrow"
+    },
     "standClass": "ga_small",
-    "dwellMinutes": { "min": 3, "max": 8 },
+    "dwellMinutes": {
+      "min": 2,
+      "max": 6
+    },
     "spawnWeight": 1.2,
     "tierUnlock": 0,
     "mtowKg": 1542
@@ -27,10 +47,20 @@
     "id": "kingair350",
     "displayName": "Beechcraft King Air 350",
     "class": "turboprop",
-    "fees": { "landing": 620, "parkingPerMinute": 9 },
-    "runway": { "minLengthMeters": 1200, "surface": "asphalt", "widthClass": "standard" },
+    "fees": {
+      "landing": 496.0,
+      "parkingPerMinute": 7.2
+    },
+    "runway": {
+      "minLengthMeters": 1200,
+      "surface": "asphalt",
+      "widthClass": "standard"
+    },
     "standClass": "ga_medium",
-    "dwellMinutes": { "min": 5, "max": 12 },
+    "dwellMinutes": {
+      "min": 4,
+      "max": 10
+    },
     "spawnWeight": 1.0,
     "tierUnlock": 1,
     "mtowKg": 6800
@@ -39,10 +69,20 @@
     "id": "pc12",
     "displayName": "Pilatus PC-12",
     "class": "turboprop",
-    "fees": { "landing": 520, "parkingPerMinute": 8 },
-    "runway": { "minLengthMeters": 850, "surface": "asphalt", "widthClass": "narrow" },
+    "fees": {
+      "landing": 416.0,
+      "parkingPerMinute": 6.4
+    },
+    "runway": {
+      "minLengthMeters": 850,
+      "surface": "asphalt",
+      "widthClass": "narrow"
+    },
     "standClass": "ga_medium",
-    "dwellMinutes": { "min": 5, "max": 11 },
+    "dwellMinutes": {
+      "min": 4,
+      "max": 9
+    },
     "spawnWeight": 1.1,
     "tierUnlock": 1,
     "mtowKg": 4740
@@ -51,10 +91,20 @@
     "id": "dhc6",
     "displayName": "DHC-6 Twin Otter",
     "class": "turboprop",
-    "fees": { "landing": 480, "parkingPerMinute": 7 },
-    "runway": { "minLengthMeters": 700, "surface": "asphalt", "widthClass": "narrow" },
+    "fees": {
+      "landing": 384.0,
+      "parkingPerMinute": 5.6
+    },
+    "runway": {
+      "minLengthMeters": 700,
+      "surface": "asphalt",
+      "widthClass": "narrow"
+    },
     "standClass": "ga_medium",
-    "dwellMinutes": { "min": 6, "max": 14 },
+    "dwellMinutes": {
+      "min": 5,
+      "max": 11
+    },
     "spawnWeight": 0.9,
     "tierUnlock": 1,
     "mtowKg": 5670
@@ -63,10 +113,20 @@
     "id": "atr42",
     "displayName": "ATR 42",
     "class": "regional_jet",
-    "fees": { "landing": 1400, "parkingPerMinute": 18 },
-    "runway": { "minLengthMeters": 1300, "surface": "asphalt", "widthClass": "standard" },
+    "fees": {
+      "landing": 1400,
+      "parkingPerMinute": 18
+    },
+    "runway": {
+      "minLengthMeters": 1300,
+      "surface": "asphalt",
+      "widthClass": "standard"
+    },
     "standClass": "regional",
-    "dwellMinutes": { "min": 10, "max": 20 },
+    "dwellMinutes": {
+      "min": 8,
+      "max": 16
+    },
     "spawnWeight": 0.8,
     "tierUnlock": 2,
     "mtowKg": 18300
@@ -75,10 +135,20 @@
     "id": "q400",
     "displayName": "Dash 8 Q400",
     "class": "regional_jet",
-    "fees": { "landing": 1850, "parkingPerMinute": 24 },
-    "runway": { "minLengthMeters": 1500, "surface": "asphalt", "widthClass": "standard" },
+    "fees": {
+      "landing": 1850,
+      "parkingPerMinute": 24
+    },
+    "runway": {
+      "minLengthMeters": 1500,
+      "surface": "asphalt",
+      "widthClass": "standard"
+    },
     "standClass": "regional",
-    "dwellMinutes": { "min": 12, "max": 22 },
+    "dwellMinutes": {
+      "min": 10,
+      "max": 18
+    },
     "spawnWeight": 0.7,
     "tierUnlock": 2,
     "mtowKg": 29257
@@ -87,10 +157,20 @@
     "id": "e175",
     "displayName": "Embraer 175",
     "class": "regional_jet",
-    "fees": { "landing": 2300, "parkingPerMinute": 30 },
-    "runway": { "minLengthMeters": 1700, "surface": "concrete", "widthClass": "standard" },
+    "fees": {
+      "landing": 2300,
+      "parkingPerMinute": 30
+    },
+    "runway": {
+      "minLengthMeters": 1700,
+      "surface": "concrete",
+      "widthClass": "standard"
+    },
     "standClass": "narrowbody",
-    "dwellMinutes": { "min": 14, "max": 26 },
+    "dwellMinutes": {
+      "min": 11,
+      "max": 21
+    },
     "spawnWeight": 0.6,
     "tierUnlock": 2,
     "mtowKg": 37600
@@ -99,10 +179,20 @@
     "id": "b737",
     "displayName": "Boeing 737-800",
     "class": "narrowbody",
-    "fees": { "landing": 4200, "parkingPerMinute": 45 },
-    "runway": { "minLengthMeters": 2200, "surface": "concrete", "widthClass": "standard" },
+    "fees": {
+      "landing": 4200,
+      "parkingPerMinute": 45
+    },
+    "runway": {
+      "minLengthMeters": 2200,
+      "surface": "concrete",
+      "widthClass": "standard"
+    },
     "standClass": "narrowbody",
-    "dwellMinutes": { "min": 18, "max": 35 },
+    "dwellMinutes": {
+      "min": 14,
+      "max": 28
+    },
     "spawnWeight": 0.45,
     "tierUnlock": 3,
     "mtowKg": 79000
@@ -111,10 +201,20 @@
     "id": "a320",
     "displayName": "Airbus A320",
     "class": "narrowbody",
-    "fees": { "landing": 4300, "parkingPerMinute": 46 },
-    "runway": { "minLengthMeters": 2100, "surface": "concrete", "widthClass": "standard" },
+    "fees": {
+      "landing": 4300,
+      "parkingPerMinute": 46
+    },
+    "runway": {
+      "minLengthMeters": 2100,
+      "surface": "concrete",
+      "widthClass": "standard"
+    },
     "standClass": "narrowbody",
-    "dwellMinutes": { "min": 18, "max": 34 },
+    "dwellMinutes": {
+      "min": 14,
+      "max": 27
+    },
     "spawnWeight": 0.45,
     "tierUnlock": 3,
     "mtowKg": 77000
@@ -123,10 +223,20 @@
     "id": "b757",
     "displayName": "Boeing 757-200",
     "class": "narrowbody",
-    "fees": { "landing": 5200, "parkingPerMinute": 55 },
-    "runway": { "minLengthMeters": 2400, "surface": "concrete", "widthClass": "wide" },
+    "fees": {
+      "landing": 5200,
+      "parkingPerMinute": 55
+    },
+    "runway": {
+      "minLengthMeters": 2400,
+      "surface": "concrete",
+      "widthClass": "wide"
+    },
     "standClass": "narrowbody",
-    "dwellMinutes": { "min": 20, "max": 38 },
+    "dwellMinutes": {
+      "min": 16,
+      "max": 30
+    },
     "spawnWeight": 0.25,
     "tierUnlock": 3,
     "mtowKg": 115680
@@ -135,10 +245,20 @@
     "id": "b777",
     "displayName": "Boeing 777-200",
     "class": "widebody",
-    "fees": { "landing": 9800, "parkingPerMinute": 95 },
-    "runway": { "minLengthMeters": 3000, "surface": "concrete", "widthClass": "wide" },
+    "fees": {
+      "landing": 9800,
+      "parkingPerMinute": 95
+    },
+    "runway": {
+      "minLengthMeters": 3000,
+      "surface": "concrete",
+      "widthClass": "wide"
+    },
     "standClass": "widebody",
-    "dwellMinutes": { "min": 30, "max": 55 },
+    "dwellMinutes": {
+      "min": 24,
+      "max": 44
+    },
     "spawnWeight": 0.12,
     "tierUnlock": 4,
     "mtowKg": 247000
@@ -147,10 +267,20 @@
     "id": "a350",
     "displayName": "Airbus A350-900",
     "class": "widebody",
-    "fees": { "landing": 10200, "parkingPerMinute": 100 },
-    "runway": { "minLengthMeters": 3100, "surface": "concrete", "widthClass": "wide" },
+    "fees": {
+      "landing": 10200,
+      "parkingPerMinute": 100
+    },
+    "runway": {
+      "minLengthMeters": 3100,
+      "surface": "concrete",
+      "widthClass": "wide"
+    },
     "standClass": "widebody",
-    "dwellMinutes": { "min": 32, "max": 58 },
+    "dwellMinutes": {
+      "min": 26,
+      "max": 46
+    },
     "spawnWeight": 0.1,
     "tierUnlock": 4,
     "mtowKg": 280000
@@ -159,10 +289,20 @@
     "id": "b767f",
     "displayName": "Boeing 767 Freighter",
     "class": "cargo_wide",
-    "fees": { "landing": 8200, "parkingPerMinute": 82 },
-    "runway": { "minLengthMeters": 2800, "surface": "concrete", "widthClass": "wide" },
+    "fees": {
+      "landing": 8200,
+      "parkingPerMinute": 82
+    },
+    "runway": {
+      "minLengthMeters": 2800,
+      "surface": "concrete",
+      "widthClass": "wide"
+    },
     "standClass": "widebody",
-    "dwellMinutes": { "min": 35, "max": 60 },
+    "dwellMinutes": {
+      "min": 28,
+      "max": 48
+    },
     "spawnWeight": 0.08,
     "tierUnlock": 4,
     "mtowKg": 186880
@@ -171,10 +311,20 @@
     "id": "atr72f",
     "displayName": "ATR 72 Freighter",
     "class": "cargo_small",
-    "fees": { "landing": 1600, "parkingPerMinute": 20 },
-    "runway": { "minLengthMeters": 1350, "surface": "asphalt", "widthClass": "standard" },
+    "fees": {
+      "landing": 1600,
+      "parkingPerMinute": 20
+    },
+    "runway": {
+      "minLengthMeters": 1350,
+      "surface": "asphalt",
+      "widthClass": "standard"
+    },
     "standClass": "regional",
-    "dwellMinutes": { "min": 14, "max": 24 },
+    "dwellMinutes": {
+      "min": 11,
+      "max": 19
+    },
     "spawnWeight": 0.6,
     "tierUnlock": 2,
     "mtowKg": 23000
@@ -183,10 +333,20 @@
     "id": "pa28",
     "displayName": "Piper PA-28 Archer",
     "class": "ga_small",
-    "fees": { "landing": 140, "parkingPerMinute": 3 },
-    "runway": { "minLengthMeters": 550, "surface": "grass", "widthClass": "narrow" },
+    "fees": {
+      "landing": 140,
+      "parkingPerMinute": 3
+    },
+    "runway": {
+      "minLengthMeters": 550,
+      "surface": "grass",
+      "widthClass": "narrow"
+    },
     "standClass": "ga_small",
-    "dwellMinutes": { "min": 3, "max": 8 },
+    "dwellMinutes": {
+      "min": 2,
+      "max": 6
+    },
     "spawnWeight": 1.3,
     "tierUnlock": 0,
     "mtowKg": 1157
@@ -195,10 +355,20 @@
     "id": "c182",
     "displayName": "Cessna 182 Skylane",
     "class": "ga_small",
-    "fees": { "landing": 190, "parkingPerMinute": 4 },
-    "runway": { "minLengthMeters": 600, "surface": "grass", "widthClass": "narrow" },
+    "fees": {
+      "landing": 190,
+      "parkingPerMinute": 4
+    },
+    "runway": {
+      "minLengthMeters": 600,
+      "surface": "grass",
+      "widthClass": "narrow"
+    },
     "standClass": "ga_small",
-    "dwellMinutes": { "min": 3, "max": 9 },
+    "dwellMinutes": {
+      "min": 2,
+      "max": 7
+    },
     "spawnWeight": 1.0,
     "tierUnlock": 0,
     "mtowKg": 1400
@@ -207,10 +377,20 @@
     "id": "da62",
     "displayName": "Diamond DA62",
     "class": "turboprop",
-    "fees": { "landing": 420, "parkingPerMinute": 7 },
-    "runway": { "minLengthMeters": 900, "surface": "asphalt", "widthClass": "narrow" },
+    "fees": {
+      "landing": 336.0,
+      "parkingPerMinute": 5.6
+    },
+    "runway": {
+      "minLengthMeters": 900,
+      "surface": "asphalt",
+      "widthClass": "narrow"
+    },
     "standClass": "ga_medium",
-    "dwellMinutes": { "min": 5, "max": 12 },
+    "dwellMinutes": {
+      "min": 4,
+      "max": 10
+    },
     "spawnWeight": 0.8,
     "tierUnlock": 1,
     "mtowKg": 2300
@@ -219,10 +399,20 @@
     "id": "m600",
     "displayName": "Piper M600",
     "class": "turboprop",
-    "fees": { "landing": 520, "parkingPerMinute": 8 },
-    "runway": { "minLengthMeters": 900, "surface": "asphalt", "widthClass": "narrow" },
+    "fees": {
+      "landing": 416.0,
+      "parkingPerMinute": 6.4
+    },
+    "runway": {
+      "minLengthMeters": 900,
+      "surface": "asphalt",
+      "widthClass": "narrow"
+    },
     "standClass": "ga_medium",
-    "dwellMinutes": { "min": 5, "max": 12 },
+    "dwellMinutes": {
+      "min": 4,
+      "max": 10
+    },
     "spawnWeight": 0.7,
     "tierUnlock": 1,
     "mtowKg": 2720
@@ -231,10 +421,20 @@
     "id": "baron58",
     "displayName": "Beechcraft Baron G58",
     "class": "turboprop",
-    "fees": { "landing": 360, "parkingPerMinute": 6 },
-    "runway": { "minLengthMeters": 850, "surface": "asphalt", "widthClass": "narrow" },
+    "fees": {
+      "landing": 288.0,
+      "parkingPerMinute": 4.8
+    },
+    "runway": {
+      "minLengthMeters": 850,
+      "surface": "asphalt",
+      "widthClass": "narrow"
+    },
     "standClass": "ga_medium",
-    "dwellMinutes": { "min": 4, "max": 11 },
+    "dwellMinutes": {
+      "min": 3,
+      "max": 9
+    },
     "spawnWeight": 0.9,
     "tierUnlock": 1,
     "mtowKg": 2450
@@ -243,22 +443,130 @@
     "id": "caravan208",
     "displayName": "Cessna 208B Grand Caravan EX",
     "class": "turboprop",
-    "fees": { "landing": 310, "parkingPerMinute": 6 },
-    "runway": { "minLengthMeters": 750, "surface": "asphalt", "widthClass": "narrow" },
+    "fees": {
+      "landing": 248.0,
+      "parkingPerMinute": 4.8
+    },
+    "runway": {
+      "minLengthMeters": 750,
+      "surface": "asphalt",
+      "widthClass": "narrow"
+    },
     "standClass": "ga_medium",
-    "dwellMinutes": { "min": 6, "max": 12 },
+    "dwellMinutes": {
+      "min": 5,
+      "max": 10
+    },
     "spawnWeight": 0.9,
     "tierUnlock": 1,
     "mtowKg": 3970
   },
   {
+    "id": "caravan208bush",
+    "displayName": "Cessna 208 Caravan (Bush)",
+    "class": "turboprop",
+    "fees": {
+      "landing": 240.0,
+      "parkingPerMinute": 4.8
+    },
+    "runway": {
+      "minLengthMeters": 650,
+      "surface": "grass",
+      "widthClass": "narrow"
+    },
+    "standClass": "ga_medium",
+    "dwellMinutes": {
+      "min": 5,
+      "max": 10
+    },
+    "spawnWeight": 0.8,
+    "tierUnlock": 1,
+    "mtowKg": 3970
+  },
+  {
+    "id": "kodiak100bush",
+    "displayName": "Kodiak 100 (Bush)",
+    "class": "turboprop",
+    "fees": {
+      "landing": 264.0,
+      "parkingPerMinute": 4.8
+    },
+    "runway": {
+      "minLengthMeters": 800,
+      "surface": "grass",
+      "widthClass": "narrow"
+    },
+    "standClass": "ga_medium",
+    "dwellMinutes": {
+      "min": 5,
+      "max": 10
+    },
+    "spawnWeight": 0.7,
+    "tierUnlock": 1,
+    "mtowKg": 3350
+  },
+  {
+    "id": "l410uvpbush",
+    "displayName": "LET L-410 UVP (Bush)",
+    "class": "turboprop",
+    "fees": {
+      "landing": 416.0,
+      "parkingPerMinute": 7.2
+    },
+    "runway": {
+      "minLengthMeters": 900,
+      "surface": "grass",
+      "widthClass": "narrow"
+    },
+    "standClass": "ga_medium",
+    "dwellMinutes": {
+      "min": 6,
+      "max": 11
+    },
+    "spawnWeight": 0.6,
+    "tierUnlock": 1,
+    "mtowKg": 6400
+  },
+  {
+    "id": "dhc6bush",
+    "displayName": "DHC-6 Twin Otter (Bush)",
+    "class": "turboprop",
+    "fees": {
+      "landing": 384.0,
+      "parkingPerMinute": 6.4
+    },
+    "runway": {
+      "minLengthMeters": 950,
+      "surface": "grass",
+      "widthClass": "narrow"
+    },
+    "standClass": "ga_medium",
+    "dwellMinutes": {
+      "min": 6,
+      "max": 12
+    },
+    "spawnWeight": 0.65,
+    "tierUnlock": 1,
+    "mtowKg": 5670
+  },
+  {
     "id": "pc24",
     "displayName": "Pilatus PC-24",
     "class": "turboprop",
-    "fees": { "landing": 820, "parkingPerMinute": 14 },
-    "runway": { "minLengthMeters": 890, "surface": "asphalt", "widthClass": "standard" },
+    "fees": {
+      "landing": 656.0,
+      "parkingPerMinute": 11.2
+    },
+    "runway": {
+      "minLengthMeters": 890,
+      "surface": "asphalt",
+      "widthClass": "standard"
+    },
     "standClass": "ga_medium",
-    "dwellMinutes": { "min": 7, "max": 14 },
+    "dwellMinutes": {
+      "min": 6,
+      "max": 11
+    },
     "spawnWeight": 0.7,
     "tierUnlock": 1,
     "mtowKg": 4800
@@ -267,10 +575,20 @@
     "id": "embraer120",
     "displayName": "Embraer EMB-120 Brasilia",
     "class": "regional_jet",
-    "fees": { "landing": 1200, "parkingPerMinute": 18 },
-    "runway": { "minLengthMeters": 1500, "surface": "asphalt", "widthClass": "standard" },
+    "fees": {
+      "landing": 960.0,
+      "parkingPerMinute": 14.4
+    },
+    "runway": {
+      "minLengthMeters": 1500,
+      "surface": "asphalt",
+      "widthClass": "standard"
+    },
     "standClass": "ga_medium",
-    "dwellMinutes": { "min": 10, "max": 18 },
+    "dwellMinutes": {
+      "min": 8,
+      "max": 14
+    },
     "spawnWeight": 0.5,
     "tierUnlock": 2,
     "mtowKg": 11900
@@ -279,10 +597,20 @@
     "id": "saab340",
     "displayName": "Saab 340B",
     "class": "regional_jet",
-    "fees": { "landing": 1350, "parkingPerMinute": 20 },
-    "runway": { "minLengthMeters": 1460, "surface": "asphalt", "widthClass": "standard" },
+    "fees": {
+      "landing": 1080.0,
+      "parkingPerMinute": 16.0
+    },
+    "runway": {
+      "minLengthMeters": 1460,
+      "surface": "asphalt",
+      "widthClass": "standard"
+    },
     "standClass": "ga_medium",
-    "dwellMinutes": { "min": 11, "max": 19 },
+    "dwellMinutes": {
+      "min": 9,
+      "max": 15
+    },
     "spawnWeight": 0.45,
     "tierUnlock": 2,
     "mtowKg": 13200
@@ -291,10 +619,20 @@
     "id": "do228",
     "displayName": "Dornier 228 NG",
     "class": "turboprop",
-    "fees": { "landing": 520, "parkingPerMinute": 9 },
-    "runway": { "minLengthMeters": 800, "surface": "asphalt", "widthClass": "narrow" },
+    "fees": {
+      "landing": 416.0,
+      "parkingPerMinute": 7.2
+    },
+    "runway": {
+      "minLengthMeters": 800,
+      "surface": "asphalt",
+      "widthClass": "narrow"
+    },
     "standClass": "ga_medium",
-    "dwellMinutes": { "min": 6, "max": 13 },
+    "dwellMinutes": {
+      "min": 5,
+      "max": 10
+    },
     "spawnWeight": 0.8,
     "tierUnlock": 1,
     "mtowKg": 6400
@@ -303,10 +641,20 @@
     "id": "b737max9",
     "displayName": "Boeing 737 MAX 9",
     "class": "narrowbody",
-    "fees": { "landing": 4600, "parkingPerMinute": 48 },
-    "runway": { "minLengthMeters": 2350, "surface": "concrete", "widthClass": "standard" },
+    "fees": {
+      "landing": 4600,
+      "parkingPerMinute": 48
+    },
+    "runway": {
+      "minLengthMeters": 2350,
+      "surface": "concrete",
+      "widthClass": "standard"
+    },
     "standClass": "narrowbody",
-    "dwellMinutes": { "min": 19, "max": 36 },
+    "dwellMinutes": {
+      "min": 15,
+      "max": 29
+    },
     "spawnWeight": 0.35,
     "tierUnlock": 3,
     "mtowKg": 88200
@@ -315,10 +663,20 @@
     "id": "a321neo",
     "displayName": "Airbus A321neo",
     "class": "narrowbody",
-    "fees": { "landing": 4700, "parkingPerMinute": 50 },
-    "runway": { "minLengthMeters": 2400, "surface": "concrete", "widthClass": "standard" },
+    "fees": {
+      "landing": 4700,
+      "parkingPerMinute": 50
+    },
+    "runway": {
+      "minLengthMeters": 2400,
+      "surface": "concrete",
+      "widthClass": "standard"
+    },
     "standClass": "narrowbody",
-    "dwellMinutes": { "min": 20, "max": 37 },
+    "dwellMinutes": {
+      "min": 16,
+      "max": 30
+    },
     "spawnWeight": 0.32,
     "tierUnlock": 3,
     "mtowKg": 93500
@@ -327,10 +685,20 @@
     "id": "b787-9",
     "displayName": "Boeing 787-9",
     "class": "widebody",
-    "fees": { "landing": 9800, "parkingPerMinute": 110 },
-    "runway": { "minLengthMeters": 3000, "surface": "concrete", "widthClass": "wide" },
+    "fees": {
+      "landing": 9800,
+      "parkingPerMinute": 110
+    },
+    "runway": {
+      "minLengthMeters": 3000,
+      "surface": "concrete",
+      "widthClass": "wide"
+    },
     "standClass": "widebody",
-    "dwellMinutes": { "min": 28, "max": 52 },
+    "dwellMinutes": {
+      "min": 22,
+      "max": 42
+    },
     "spawnWeight": 0.16,
     "tierUnlock": 4,
     "mtowKg": 254000
@@ -339,10 +707,20 @@
     "id": "a330-900",
     "displayName": "Airbus A330-900neo",
     "class": "widebody",
-    "fees": { "landing": 9400, "parkingPerMinute": 104 },
-    "runway": { "minLengthMeters": 2950, "surface": "concrete", "widthClass": "wide" },
+    "fees": {
+      "landing": 9400,
+      "parkingPerMinute": 104
+    },
+    "runway": {
+      "minLengthMeters": 2950,
+      "surface": "concrete",
+      "widthClass": "wide"
+    },
     "standClass": "widebody",
-    "dwellMinutes": { "min": 27, "max": 50 },
+    "dwellMinutes": {
+      "min": 22,
+      "max": 40
+    },
     "spawnWeight": 0.15,
     "tierUnlock": 4,
     "mtowKg": 251000
@@ -351,10 +729,20 @@
     "id": "b767-300er",
     "displayName": "Boeing 767-300ER",
     "class": "widebody",
-    "fees": { "landing": 8200, "parkingPerMinute": 92 },
-    "runway": { "minLengthMeters": 2800, "surface": "concrete", "widthClass": "wide" },
+    "fees": {
+      "landing": 8200,
+      "parkingPerMinute": 92
+    },
+    "runway": {
+      "minLengthMeters": 2800,
+      "surface": "concrete",
+      "widthClass": "wide"
+    },
     "standClass": "widebody",
-    "dwellMinutes": { "min": 26, "max": 48 },
+    "dwellMinutes": {
+      "min": 21,
+      "max": 38
+    },
     "spawnWeight": 0.18,
     "tierUnlock": 4,
     "mtowKg": 186900
@@ -363,10 +751,20 @@
     "id": "b737-800bcf",
     "displayName": "Boeing 737-800BCF",
     "class": "cargo_small",
-    "fees": { "landing": 3600, "parkingPerMinute": 38 },
-    "runway": { "minLengthMeters": 2200, "surface": "concrete", "widthClass": "standard" },
+    "fees": {
+      "landing": 3600,
+      "parkingPerMinute": 38
+    },
+    "runway": {
+      "minLengthMeters": 2200,
+      "surface": "concrete",
+      "widthClass": "standard"
+    },
     "standClass": "narrowbody",
-    "dwellMinutes": { "min": 18, "max": 32 },
+    "dwellMinutes": {
+      "min": 14,
+      "max": 26
+    },
     "spawnWeight": 0.3,
     "tierUnlock": 3,
     "mtowKg": 79015
@@ -375,10 +773,20 @@
     "id": "a321p2f",
     "displayName": "Airbus A321 P2F",
     "class": "cargo_small",
-    "fees": { "landing": 3700, "parkingPerMinute": 40 },
-    "runway": { "minLengthMeters": 2300, "surface": "concrete", "widthClass": "standard" },
+    "fees": {
+      "landing": 3700,
+      "parkingPerMinute": 40
+    },
+    "runway": {
+      "minLengthMeters": 2300,
+      "surface": "concrete",
+      "widthClass": "standard"
+    },
     "standClass": "narrowbody",
-    "dwellMinutes": { "min": 19, "max": 34 },
+    "dwellMinutes": {
+      "min": 15,
+      "max": 27
+    },
     "spawnWeight": 0.28,
     "tierUnlock": 3,
     "mtowKg": 93500
@@ -387,10 +795,20 @@
     "id": "b757-200pf",
     "displayName": "Boeing 757-200PF",
     "class": "cargo_small",
-    "fees": { "landing": 4800, "parkingPerMinute": 55 },
-    "runway": { "minLengthMeters": 2400, "surface": "concrete", "widthClass": "wide" },
+    "fees": {
+      "landing": 4800,
+      "parkingPerMinute": 55
+    },
+    "runway": {
+      "minLengthMeters": 2400,
+      "surface": "concrete",
+      "widthClass": "wide"
+    },
     "standClass": "narrowbody",
-    "dwellMinutes": { "min": 22, "max": 40 },
+    "dwellMinutes": {
+      "min": 18,
+      "max": 32
+    },
     "spawnWeight": 0.22,
     "tierUnlock": 3,
     "mtowKg": 116000
@@ -399,10 +817,20 @@
     "id": "b777f",
     "displayName": "Boeing 777F",
     "class": "cargo_wide",
-    "fees": { "landing": 11200, "parkingPerMinute": 130 },
-    "runway": { "minLengthMeters": 3200, "surface": "concrete", "widthClass": "wide" },
+    "fees": {
+      "landing": 11200,
+      "parkingPerMinute": 130
+    },
+    "runway": {
+      "minLengthMeters": 3200,
+      "surface": "concrete",
+      "widthClass": "wide"
+    },
     "standClass": "widebody",
-    "dwellMinutes": { "min": 32, "max": 58 },
+    "dwellMinutes": {
+      "min": 26,
+      "max": 46
+    },
     "spawnWeight": 0.12,
     "tierUnlock": 4,
     "mtowKg": 347800
@@ -411,10 +839,20 @@
     "id": "a330-200f",
     "displayName": "Airbus A330-200F",
     "class": "cargo_wide",
-    "fees": { "landing": 9900, "parkingPerMinute": 115 },
-    "runway": { "minLengthMeters": 3000, "surface": "concrete", "widthClass": "wide" },
+    "fees": {
+      "landing": 9900,
+      "parkingPerMinute": 115
+    },
+    "runway": {
+      "minLengthMeters": 3000,
+      "surface": "concrete",
+      "widthClass": "wide"
+    },
     "standClass": "widebody",
-    "dwellMinutes": { "min": 30, "max": 55 },
+    "dwellMinutes": {
+      "min": 24,
+      "max": 44
+    },
     "spawnWeight": 0.14,
     "tierUnlock": 4,
     "mtowKg": 233000
@@ -423,10 +861,20 @@
     "id": "icona5",
     "displayName": "ICON A5",
     "class": "ga_small",
-    "fees": { "landing": 90, "parkingPerMinute": 2 },
-    "runway": { "minLengthMeters": 400, "surface": "grass", "widthClass": "narrow" },
+    "fees": {
+      "landing": 90,
+      "parkingPerMinute": 2
+    },
+    "runway": {
+      "minLengthMeters": 400,
+      "surface": "grass",
+      "widthClass": "narrow"
+    },
     "standClass": "ga_small",
-    "dwellMinutes": { "min": 2, "max": 6 },
+    "dwellMinutes": {
+      "min": 2,
+      "max": 5
+    },
     "spawnWeight": 0.7,
     "tierUnlock": 0,
     "mtowKg": 685
@@ -435,10 +883,20 @@
     "id": "xcub",
     "displayName": "CubCrafters XCub",
     "class": "ga_small",
-    "fees": { "landing": 110, "parkingPerMinute": 2 },
-    "runway": { "minLengthMeters": 350, "surface": "grass", "widthClass": "narrow" },
+    "fees": {
+      "landing": 110,
+      "parkingPerMinute": 2
+    },
+    "runway": {
+      "minLengthMeters": 350,
+      "surface": "grass",
+      "widthClass": "narrow"
+    },
     "standClass": "ga_small",
-    "dwellMinutes": { "min": 2, "max": 7 },
+    "dwellMinutes": {
+      "min": 2,
+      "max": 6
+    },
     "spawnWeight": 0.65,
     "tierUnlock": 0,
     "mtowKg": 930
@@ -447,10 +905,20 @@
     "id": "rv7",
     "displayName": "Van's RV-7 (homebuilt)",
     "class": "ga_small",
-    "fees": { "landing": 130, "parkingPerMinute": 3 },
-    "runway": { "minLengthMeters": 500, "surface": "grass", "widthClass": "narrow" },
+    "fees": {
+      "landing": 130,
+      "parkingPerMinute": 3
+    },
+    "runway": {
+      "minLengthMeters": 500,
+      "surface": "grass",
+      "widthClass": "narrow"
+    },
     "standClass": "ga_small",
-    "dwellMinutes": { "min": 3, "max": 8 },
+    "dwellMinutes": {
+      "min": 2,
+      "max": 6
+    },
     "spawnWeight": 0.6,
     "tierUnlock": 0,
     "mtowKg": 815
@@ -459,10 +927,20 @@
     "id": "extra330",
     "displayName": "Extra 330LX (aerobatic)",
     "class": "ga_small",
-    "fees": { "landing": 170, "parkingPerMinute": 4 },
-    "runway": { "minLengthMeters": 600, "surface": "asphalt", "widthClass": "narrow" },
+    "fees": {
+      "landing": 170,
+      "parkingPerMinute": 4
+    },
+    "runway": {
+      "minLengthMeters": 600,
+      "surface": "asphalt",
+      "widthClass": "narrow"
+    },
     "standClass": "ga_small",
-    "dwellMinutes": { "min": 2, "max": 6 },
+    "dwellMinutes": {
+      "min": 2,
+      "max": 5
+    },
     "spawnWeight": 0.5,
     "tierUnlock": 0,
     "mtowKg": 950
@@ -471,10 +949,20 @@
     "id": "visionjet",
     "displayName": "Cirrus Vision Jet SF50",
     "class": "ga_small",
-    "fees": { "landing": 420, "parkingPerMinute": 7 },
-    "runway": { "minLengthMeters": 1200, "surface": "asphalt", "widthClass": "standard" },
+    "fees": {
+      "landing": 420,
+      "parkingPerMinute": 7
+    },
+    "runway": {
+      "minLengthMeters": 1200,
+      "surface": "asphalt",
+      "widthClass": "standard"
+    },
     "standClass": "ga_small",
-    "dwellMinutes": { "min": 4, "max": 10 },
+    "dwellMinutes": {
+      "min": 3,
+      "max": 8
+    },
     "spawnWeight": 0.4,
     "tierUnlock": 1,
     "mtowKg": 2721

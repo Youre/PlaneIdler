@@ -25,7 +25,8 @@ const DAY_END_MIN: float = 20.0 * 60.0    # 20:00
 # - Day (06:00-20:00, 14 hours / 840 minutes) lasts 10 real minutes -> 840 / 600 = 1.4 min sim-time per sim-second.
 # - Night (20:00-06:00, 10 hours / 600 minutes) lasts 2.5 real minutes -> 600 / 150 = 4.0 min sim-time per sim-second.
 const DAY_RATE_MIN_PER_SEC: float = 1.4
-const NIGHT_RATE_MIN_PER_SEC: float = 4.0
+const NIGHT_RATE_MIN_PER_SEC: float = 4.0              # With runway lighting (night ops unlocked).
+const NIGHT_RATE_NO_LIGHTS_MIN_PER_SEC: float = 10.0   # Without night ops: condense night to ~1 real minute.
 
 var clock_minutes: float = DAY_START_MIN   # in-game clock, 0-1440 (wraps each day)
 var day_index: int = 1                    # Day 1, 2, 3, ...
@@ -40,7 +41,10 @@ func _ready() -> void:
 func advance(dt: float) -> void:
 	var prev_clock := clock_minutes
 	time_seconds += dt
-	var rate: float = DAY_RATE_MIN_PER_SEC if is_daytime() else NIGHT_RATE_MIN_PER_SEC
+	var rate: float = DAY_RATE_MIN_PER_SEC
+	if not is_daytime():
+		var has_night_ops := bool(nav_capabilities.get("night_ops", false))
+		rate = NIGHT_RATE_MIN_PER_SEC if has_night_ops else NIGHT_RATE_NO_LIGHTS_MIN_PER_SEC
 	clock_minutes += dt * rate
 	clock_minutes = fposmod(clock_minutes, MINUTES_PER_DAY)
 	if clock_minutes < prev_clock:
