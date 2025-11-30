@@ -28,6 +28,7 @@ var _fbo_classes: Array = [] # e.g. ["ga", "all"]
 var _fbo_fee_base: float = 0.0
 var _fbo_stands: Dictionary = {} # Stand -> bool (uses FBO)
 var _pattern_entries: Array = [] # [{ "aircraft": Dictionary, "actor": AircraftActor }]
+var _diversion_reasons: Dictionary = {} # reason -> count; mirrored into sim_state for AI context
 
 func _ready() -> void:
 	randomize()
@@ -356,6 +357,7 @@ func _log_diversion(aircraft: Dictionary, reason: String) -> void:
 		aircraft.get("displayName", "Aircraft"),
 		reason
 	])
+	_track_diversion_reason(reason)
 
 func _spawn_flyover(aircraft: Dictionary) -> void:
 	if aircraft_scene == null or runway == null:
@@ -638,3 +640,22 @@ func _runway_diversion_reason(aircraft: Dictionary) -> String:
 	if width_req == "wide" and rwy.width_m < 45.0:
 		return "runway too narrow for wide-body aircraft"
 	return "runway not suitable"
+
+func _track_diversion_reason(reason: String) -> void:
+	var key := reason if reason != "" else "unspecified"
+	_diversion_reasons[key] = int(_diversion_reasons.get(key, 0)) + 1
+	if sim_state != null:
+		sim_state.add_diversion_reason(key)
+
+func get_diversion_reasons() -> Dictionary:
+	return _diversion_reasons.duplicate()
+
+func get_top_diversion_reasons(limit: int = 3) -> Array:
+	# Return array of {reason, count} sorted desc by count.
+	var pairs: Array = []
+	for k in _diversion_reasons.keys():
+		pairs.append({ "reason": k, "count": _diversion_reasons[k] })
+	pairs.sort_custom(func(a, b): return a["count"] > b["count"])
+	if limit > 0 and pairs.size() > limit:
+		return pairs.slice(0, limit)
+	return pairs

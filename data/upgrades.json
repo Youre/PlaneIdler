@@ -84,7 +84,7 @@
     "cost": 6200,
     "buildTimeSeconds": 240,
     "maxPurchases": 3,
-    "prerequisites": [ "pave_runway", "runway_extension_1" ],
+    "prerequisites": [ "pave_runway", "runway_extension_2" ],
     "effects": [
       { "type": "add_stand", "standClass": "regional", "count": 2 }
     ],

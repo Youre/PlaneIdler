@@ -14,6 +14,7 @@ var tier_upgrade_counts := {}
 var daily_income: Array = []   # last N days, newest at end
 var daily_received: Array = [] # arrivals we handled
 var daily_missed: Array = []   # arrivals we diverted/missed
+var diversion_reasons: Dictionary = {} # reason -> count; helps AI choose upgrades
 
 var active_arrivals: Array = []
 var active_parking: Array = []
@@ -88,6 +89,13 @@ func add_missed(count: float = 1.0) -> void:
 	if daily_missed.is_empty():
 		daily_missed.append(0.0)
 	daily_missed[daily_missed.size() - 1] = float(daily_missed.back()) + count
+
+func add_diversion_reason(reason: String) -> void:
+	var key := reason if reason != "" else "unspecified"
+	diversion_reasons[key] = int(diversion_reasons.get(key, 0)) + 1
+
+func get_diversion_reasons() -> Dictionary:
+	return diversion_reasons.duplicate()
 
 func get_recent_daily_income() -> Array:
 	return daily_income.duplicate()
