@@ -66,6 +66,9 @@ MonoBehaviour:
   catalog: {fileID: 0}
   simState: {fileID: 0}
   arrivalGenerator: {fileID: 0}
+  airportManager: {fileID: 0}
+  primaryRunway: {fileID: 0}
+  simController: {fileID: 0}
 --- !u!114 &2793199430590435408
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -98,8 +101,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e739829a8d6bc5444b191adc7b2dc471, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlaneIdler.Sim.ArrivalGenerator
-  spawnIntervalSeconds: 8
-  jitterSeconds: 3
+  minIntervalSeconds: 30
+  maxIntervalSeconds: 60
+  initialDelaySeconds: 5
   simState: {fileID: 0}
 --- !u!114 &3880255316494643695
 MonoBehaviour:

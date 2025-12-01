@@ -79,6 +79,8 @@ public static class PrototypeSceneBuilder
             var mat = new Material(shader);
             if (grassTex != null)
             {
+                // Ensure the grass tiles instead of stretching from the edge.
+                grassTex.wrapMode = TextureWrapMode.Repeat;
                 mat.mainTexture = grassTex;
                 mat.mainTextureScale = new Vector2(16f, 16f); // matches Godot UV scale
             }
@@ -279,18 +281,17 @@ public static class PrototypeSceneBuilder
     {
         var renderer = runwayGo.GetComponent<Renderer>() ?? runwayGo.GetComponentInChildren<Renderer>();
         if (renderer == null) return;
+        var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+        if (shader == null) return;
+
+        // Always enforce a distinct dark-green runway material so it
+        // stands out from the ground regardless of prefab defaults.
         var mat = renderer.sharedMaterial;
-        if (mat == null || mat.shader == null)
-        {
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
-            if (shader == null) shader = Shader.Find("Standard");
-            if (shader != null)
-            {
-                mat = new Material(shader);
-                mat.color = new Color(0.2f, 0.5f, 0.25f);
-                renderer.sharedMaterial = mat;
-            }
-        }
+        if (mat == null || mat.shader == null || mat.shader != shader)
+            mat = new Material(shader);
+
+        mat.color = new Color(0.2f, 0.5f, 0.25f);
+        renderer.sharedMaterial = mat;
     }
 
     private static void EnsureFolder(string folderPath)

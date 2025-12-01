@@ -28,6 +28,16 @@ namespace PlaneIdler.Sim
 
         [Header("Rates")]
         public float arrivalRateMultiplier = 1f;
+        public float trafficRateMultiplier = 1f;
+
+        [Header("Progression")]
+        public int progressionTier;
+        // tier index (1-4) -> number of upgrades completed at that tier.
+        public System.Collections.Generic.Dictionary<int, int> tierUpgradeCounts = new();
+
+        [Header("Nav / ATC")]
+        public bool nightOpsUnlocked;
+        public bool atcUnlocked;
 
         [Header("Time")]
         public float timeSeconds;
@@ -40,8 +50,6 @@ namespace PlaneIdler.Sim
         public const float DAY_RATE_MIN_PER_SEC = 1.4f;
         public const float NIGHT_RATE_MIN_PER_SEC = 4.0f;
         public const float NIGHT_RATE_NO_LIGHTS_MIN_PER_SEC = 10.0f;
-
-        public bool nightOpsUnlocked;
 
         public void Advance(float dt)
         {

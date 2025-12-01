@@ -12,6 +12,9 @@ namespace PlaneIdler.Systems
         [SerializeField] private CatalogLoader catalog;
         [SerializeField] private SimState simState;
         [SerializeField] private ArrivalGenerator arrivalGenerator;
+        [SerializeField] private PlaneIdler.Airport.AirportManager airportManager;
+        [SerializeField] private PlaneIdler.Airport.Runway primaryRunway;
+        [SerializeField] private SimController simController;
 
         private readonly System.Collections.Generic.Dictionary<string, int> _purchaseCounts = new();
         private readonly System.Collections.Generic.List<BuildEntry> _buildQueue = new();
@@ -21,12 +24,17 @@ namespace PlaneIdler.Systems
             if (catalog == null) catalog = GetComponent<CatalogLoader>();
             if (simState == null) simState = Resources.Load<SimState>("Settings/SimState");
             if (arrivalGenerator == null) arrivalGenerator = FindFirstObjectByType<ArrivalGenerator>();
+            if (airportManager == null) airportManager = FindFirstObjectByType<PlaneIdler.Airport.AirportManager>();
+            if (primaryRunway == null) primaryRunway = FindFirstObjectByType<PlaneIdler.Airport.Runway>();
+            if (simController == null) simController = FindFirstObjectByType<SimController>();
         }
 
         private void Update()
         {
             if (_buildQueue.Count == 0) return;
             float dt = Time.deltaTime;
+            if (simController != null)
+                dt *= simController.GetTimeScale();
             for (int i = _buildQueue.Count - 1; i >= 0; i--)
             {
                 var e = _buildQueue[i];
@@ -113,24 +121,60 @@ namespace PlaneIdler.Systems
                         ApplyNav(e);
                         break;
                     case "add_stand":
-                        // Placeholder: UI/build system would instantiate stands; here we just log.
-                        Debug.Log($"UpgradeManager: add_stand {e.standClass} x{e.count}");
+                        ApplyAddStand(e);
                         break;
                     case "extend_runway":
+                        ApplyExtendRunway(e);
+                        break;
                     case "widen_runway":
+                        ApplyWidenRunway(e);
+                        break;
                     case "add_runway":
+                        ApplyAddRunway(e);
+                        break;
                     case "upgrade_surface":
-                        Debug.Log($"UpgradeManager: runway upgrade {e.type}");
+                        ApplyUpgradeSurface(e);
                         break;
                     case "add_hangar":
                     case "add_taxi_exit":
-                Debug.Log($"UpgradeManager: infra upgrade {e.type}");
-                break;
-            default:
-                Debug.Log($"UpgradeManager: unhandled effect {e.type}");
-                break;
+                        ApplyInfra(e);
+                        break;
+                    default:
+                        Debug.Log($"UpgradeManager: unhandled effect {e.type}");
+                        break;
+                }
             }
-        }
+
+            // Track progression tier and tier-specific counts for spawn weighting.
+            if (simState != null)
+            {
+                int tier = up.tierUnlock;
+                if (tier >= 0)
+                {
+                    if (tier > simState.progressionTier)
+                        simState.progressionTier = tier;
+                    if (!simState.tierUpgradeCounts.ContainsKey(tier))
+                        simState.tierUpgradeCounts[tier] = 0;
+                    simState.tierUpgradeCounts[tier]++;
+                }
+            }
+
+            // ID-specific hooks mirroring Godot behavior.
+            if (airportManager != null)
+            {
+                switch (up.id)
+                {
+                    case "tower_upgrade":
+                        airportManager.ShowTower();
+                        break;
+                    case "fuel_farm":
+                        airportManager.ShowFuelStation();
+                        break;
+                    case "ils_lighting":
+                        airportManager.EnableRunwayLights();
+                        break;
+                }
+            }
 
             Events.RaiseConstructionUpdated();
         }
@@ -144,7 +188,7 @@ namespace PlaneIdler.Systems
                     simState.income_multiplier *= e.value;
                     break;
                 case "arrival_rate":
-                    simState.arrivalRateMultiplier *= e.value;
+                    simState.trafficRateMultiplier *= e.value;
                     break;
             }
         }
@@ -152,9 +196,99 @@ namespace PlaneIdler.Systems
         private void ApplyNav(CatalogLoader.UpgradeEffect e)
         {
             if (simState == null) return;
-            if (e.capability == "night_ops")
+            switch (e.capability)
             {
-                simState.nightOpsUnlocked = true;
+                case "night_ops":
+                    simState.nightOpsUnlocked = true;
+                    break;
+                case "atc":
+                    simState.atcUnlocked = true;
+                    break;
+            }
+        }
+
+        private void ApplyAddStand(CatalogLoader.UpgradeEffect e)
+        {
+            if (airportManager == null) return;
+            int count = e.count;
+            if (count <= 0) return;
+            string standClass = e.standClass;
+            airportManager.AddStands(standClass, count);
+        }
+
+        private void ApplyExtendRunway(CatalogLoader.UpgradeEffect e)
+        {
+            if (primaryRunway == null) return;
+            float meters = e.lengthMeters;
+            if (meters <= 0f) return;
+            primaryRunway.LengthMeters += meters;
+            Debug.Log($"UpgradeManager: extended runway by {meters:0} m");
+        }
+
+        private void ApplyWidenRunway(CatalogLoader.UpgradeEffect e)
+        {
+            if (primaryRunway == null) return;
+            float minWidth = e.widthClass == "wide" ? 45f : e.lengthMeters;
+            if (minWidth <= 0f) minWidth = 45f;
+            if (primaryRunway.WidthMeters < minWidth)
+                primaryRunway.WidthMeters = minWidth;
+            Debug.Log($"UpgradeManager: widened runways to >= {minWidth:0} m");
+        }
+
+        private void ApplyAddRunway(CatalogLoader.UpgradeEffect e)
+        {
+            if (airportManager == null) return;
+            float lengthMeters = e.lengthMeters;
+            string surface = string.IsNullOrEmpty(e.surface) ? "asphalt" : e.surface;
+            string widthClass = string.IsNullOrEmpty(e.widthClass) ? "standard" : e.widthClass;
+
+            var newRunway = airportManager.AddParallelRunway(80f);
+            if (newRunway == null) return;
+            if (lengthMeters > 0f)
+                newRunway.LengthMeters = lengthMeters;
+            newRunway.Surface = surface;
+            if (widthClass == "wide" && newRunway.WidthMeters < 45f)
+                newRunway.WidthMeters = 45f;
+
+            // Bump traffic rate like Godot does.
+            if (simState != null)
+            {
+                if (simState.trafficRateMultiplier <= 0f)
+                    simState.trafficRateMultiplier = 1f;
+                simState.trafficRateMultiplier *= 1.4f;
+            }
+            Debug.Log("UpgradeManager: built additional runway");
+        }
+
+        private void ApplyUpgradeSurface(CatalogLoader.UpgradeEffect e)
+        {
+            if (primaryRunway == null) return;
+            string toSurface = string.IsNullOrEmpty(e.surface) ? "asphalt" : e.surface;
+            if (!string.IsNullOrEmpty(toSurface))
+            {
+                primaryRunway.Surface = toSurface;
+                Debug.Log($"UpgradeManager: upgraded runway surface to {toSurface}");
+            }
+        }
+
+        private void ApplyInfra(CatalogLoader.UpgradeEffect e)
+        {
+            if (airportManager == null || simState == null) return;
+            switch (e.type)
+            {
+                case "add_hangar":
+                    airportManager.AddHangars(e.count);
+                    // Hangars also register FBO slots via SimController/SimState in Godot;
+                    // we mirror the slot count on SimState so FBO service can use it.
+                    simState.fboSlotsTotal += e.count;
+                    break;
+                case "add_taxi_exit":
+                    airportManager.EnableTaxiways();
+                    if (simState.trafficRateMultiplier <= 0f)
+                        simState.trafficRateMultiplier = 1f;
+                    float bonus = e.target == "rapid" ? 1.1f : 1.05f;
+                    simState.trafficRateMultiplier *= bonus;
+                    break;
             }
         }
 

@@ -13,16 +13,15 @@ namespace PlaneIdler.Systems
         public Vector3 center = Vector3.zero;
 
         [Header("Orbit")]
-        public float radius = 120f;
-        public float height = 70f;
+        public float radius = 180f;
+        public float height = 100f;
         public float angularSpeed = 8f; // degrees per second
-        public float pitchDegrees = 55f;
+        public float pitchDegrees = 45f;
 
-        [Header("Scaling")]
-        public float radiusMultiplier = 0.25f; // radius ~= 25% of runway length
-        public float heightMultiplier = 0.15f; // height ~= 15% of runway length
-        public float minRadius = 80f;
-        public float minHeight = 50f;
+        [Header("Scaling (Godot parity)")]
+        // Minimum bounds; actual radius/height derived from Godot main.gd formula.
+        public float minRadius = 160f;
+        public float minHeight = 90f;
 
         private float _angle;
         private PlaneIdler.Airport.Runway _runway;
@@ -31,7 +30,13 @@ namespace PlaneIdler.Systems
         {
             _angle = 0f;
             ResolveRunway();
-            UpdateCenterAndScale();
+            // Start centered on the runway if available; otherwise origin.
+            center = _runway != null ? _runway.transform.position : Vector3.zero;
+
+            // Clamp the main camera FOV for a more zoomed-in, orthographic-feel view.
+            var cam = GetComponent<Camera>();
+            if (cam != null)
+                cam.fieldOfView = 45f;
         }
 
         private void ResolveRunway()
@@ -46,12 +51,25 @@ namespace PlaneIdler.Systems
 
         private void UpdateCenterAndScale()
         {
-            if (runwayTarget != null)
-                center = runwayTarget.position;
+            // Derive center/radius/height using the same scale as the Godot implementation:
+            //
+            //   base_size = max(180, runway.length_m * 0.7)
+            //   size      = base_size * 0.6
+            //   dist      = size
+            //   height    = dist * 0.7
             if (_runway != null)
             {
-                radius = Mathf.Max(minRadius, _runway.LengthMeters * radiusMultiplier);
-                height = Mathf.Max(minHeight, _runway.LengthMeters * heightMultiplier);
+                center = _runway.transform.position;
+                float baseSize = Mathf.Max(180f, _runway.LengthMeters * 0.7f);
+                float size = baseSize * 0.6f;
+                float dist = size;
+                radius = Mathf.Max(minRadius, dist);
+                // Raise camera altitude relative to distance to keep more of the field in view.
+                height = Mathf.Max(minHeight, dist * 1.0f);
+            }
+            else if (runwayTarget != null)
+            {
+                center = runwayTarget.position;
             }
         }
 

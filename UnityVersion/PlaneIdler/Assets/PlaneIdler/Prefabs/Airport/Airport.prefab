@@ -47,6 +47,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlaneIdler.Airport.AirportManager
   standManager: {fileID: 0}
+  primaryRunway: {fileID: 0}
+  standPrefab: {fileID: 0}
+  standsRoot: {fileID: 0}
+  hangarsRoot: {fileID: 0}
+  tower: {fileID: 0}
+  fuelStation: {fileID: 0}
+  taxiwaysRoot: {fileID: 0}
+  runwayLights: {fileID: 0}
+  standSpacing: 25
+  standRowOrigin: {x: 0, y: 0.1, z: -15}
+  hangarSpacing: 40
 --- !u!114 &1150681635224356169
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -22,6 +22,19 @@ namespace PlaneIdler.Sim
         private readonly List<DwellTimer> _dwellTimers = new();
         private bool _runwayBusy;
         private readonly Queue<DepartureJob> _departureQueue = new();
+
+        // ATC / holding pattern support (ported from Godot)
+        private class PatternEntry
+        {
+            public Systems.CatalogLoader.AircraftDef Aircraft;
+            public PlaneIdler.Actors.AircraftActor Actor;
+            public List<Vector3> Points;
+            public float WaitMinutes;
+        }
+
+        // FIFO of arrivals waiting for a runway slot when ATC is active.
+        private readonly List<PatternEntry> _arrivalQueue = new();
+        private readonly List<PatternEntry> _patternEntries = new();
         private readonly Eligibility _eligibility = new();
 
         public SimState State => simState;
@@ -54,6 +67,18 @@ namespace PlaneIdler.Sim
                 arrivalGenerator.Init(catalog);
         }
 
+        private void Start()
+        {
+            // Safety: ensure the Airport root is active after all objects
+            // have been instantiated so the runway and stands render.
+            var airportMgr = FindFirstObjectByType<Airport.AirportManager>(FindObjectsInactive.Include);
+            if (airportMgr == null)
+                return;
+
+            if (!airportMgr.gameObject.activeSelf)
+                airportMgr.gameObject.SetActive(true);
+        }
+
         private void Update()
         {
             _accumulator += Time.deltaTime * timeScale;
@@ -66,19 +91,27 @@ namespace PlaneIdler.Sim
 
         private void Tick(float dt)
         {
-            // Arrivals
-            Systems.CatalogLoader.AircraftDef spawn = null;
+            // Arrivals (may be multiple per tick, like Godot)
             if (arrivalGenerator != null)
-                spawn = arrivalGenerator.UpdateGenerator(dt);
-            if (spawn != null)
-                HandleArrival(spawn);
+            {
+                var spawns = arrivalGenerator.UpdateGenerator(dt);
+                if (spawns != null)
+                {
+                    foreach (var ac in spawns)
+                    {
+                        if (ac != null)
+                            HandleArrival(ac);
+                    }
+                }
+            }
 
             // Dwell timers and departures
             ProcessDwell(dt);
-            ServiceDepartureQueue();
+            ServiceRunwayQueue();
 
             // Advance time of day
             simState?.Advance(dt);
+            UpdatePatternFlights(dt);
 
         }
 
@@ -92,15 +125,20 @@ namespace PlaneIdler.Sim
                 return;
             }
 
-            // If runway is already in use, divert (Unity build has no ATC / holding pattern logic).
-            if (_runwayBusy)
+            bool hasAtc = HasAtc();
+            // If runway is already in use and there is no ATC, divert with a clear reason.
+            if (_runwayBusy && !hasAtc)
             {
                 simState?.AddMissed();
                 Systems.Events.RaiseMissed(simState.missed);
-                Log($"Arrival diverted: runway busy for {aircraft.id}");
-                // Optional visual: a one-off holding / flyby pattern.
-                if (aircraftActorPrefab != null && runway != null)
-                    SpawnHoldingPattern(aircraft);
+                Log($"Arrival diverted: runway in use and no ATC for {aircraft.id}");
+                return;
+            }
+
+            // If runway is busy but ATC is available, enqueue into a holding pattern.
+            if (_runwayBusy && hasAtc)
+            {
+                EnqueuePatternArrival(aircraft);
                 return;
             }
 
@@ -128,7 +166,7 @@ namespace PlaneIdler.Sim
             SpawnArrivalActor(aircraft, stand, () =>
             {
                 _runwayBusy = false;
-                ServiceDepartureQueue();
+                ServiceRunwayQueue();
             });
 
             Log($"[ARR] {aircraft.displayName} arrived -> {stand.Label} ({aircraft.standClass})");
@@ -166,6 +204,28 @@ namespace PlaneIdler.Sim
             LaunchDeparture(job.Stand, job.Aircraft);
         }
 
+        private void ServiceRunwayQueue()
+        {
+            if (_runwayBusy)
+                return;
+
+            // First, service any queued arrivals managed by ATC.
+            if (_arrivalQueue.Count > 0)
+            {
+                var entry = _arrivalQueue[0];
+                _arrivalQueue.RemoveAt(0);
+                if (entry.Actor != null)
+                    Destroy(entry.Actor.gameObject);
+                _patternEntries.Remove(entry);
+                if (entry.Aircraft != null)
+                    HandleArrival(entry.Aircraft);
+                return;
+            }
+
+            // Then fall back to departures.
+            ServiceDepartureQueue();
+        }
+
         private void LaunchDeparture(Airport.Stand stand, Systems.CatalogLoader.AircraftDef aircraft)
         {
             if (stand == null) return;
@@ -180,7 +240,7 @@ namespace PlaneIdler.Sim
             SpawnDepartureActor(stand, aircraft, () =>
             {
                 _runwayBusy = false;
-                ServiceDepartureQueue();
+                ServiceRunwayQueue();
             });
             stand.Vacate();
             simState.activeAircraft = Mathf.Max(0, simState.activeAircraft - 1);
@@ -243,29 +303,105 @@ namespace PlaneIdler.Sim
             actor.GetComponent<Actors.AircraftActor>()?.StartPath(new[] { start, lineup, accel, rotate, climb }, onComplete);
         }
 
-        private void SpawnHoldingPattern(Systems.CatalogLoader.AircraftDef aircraft)
-        {
-            var actor = Instantiate(aircraftActorPrefab);
-            var fwd = runway.transform.right.normalized;
-            var right = runway.transform.forward.normalized;
-            float alt = 45f;
-            float legLong = 450f;
-            float legShort = 220f;
-            var center = runway.transform.position;
-            var p1 = center - fwd * (legLong * 0.5f) + right * legShort + Vector3.up * alt;
-            var p2 = center + fwd * (legLong * 0.5f) + right * legShort + Vector3.up * alt;
-            var p3 = center + fwd * (legLong * 0.5f) - right * legShort + Vector3.up * alt;
-            var p4 = center - fwd * (legLong * 0.5f) - right * legShort + Vector3.up * alt;
-            actor.GetComponent<Actors.AircraftActor>()?.StartPath(new[] { p1, p2, p3, p4, p1 }, () =>
-            {
-                Destroy(actor);
-            });
-        }
-
         private void Log(string msg)
         {
             Systems.Events.RaiseLog(msg);
             Debug.Log(msg);
+        }
+
+        private bool HasAtc()
+        {
+            return simState != null && simState.atcUnlocked;
+        }
+
+        private void EnqueuePatternArrival(Systems.CatalogLoader.AircraftDef aircraft)
+        {
+            if (aircraft == null)
+                return;
+
+            // When ATC is available and the runway is busy, create a visual
+            // aircraft flying a rectangular traffic pattern while it waits.
+            PatternEntry entry = new PatternEntry
+            {
+                Aircraft = aircraft,
+                Points = new List<Vector3>(),
+                WaitMinutes = 0f
+            };
+
+            if (aircraftActorPrefab != null && runway != null)
+            {
+                var actorGo = Instantiate(aircraftActorPrefab);
+                var actor = actorGo.GetComponent<PlaneIdler.Actors.AircraftActor>();
+                entry.Actor = actor;
+                if (actor != null)
+                    actor.taxiSpeed = 55f;
+
+                var center = runway.transform.position;
+                var fwd = runway.transform.right.normalized;
+                var right = runway.transform.forward.normalized;
+                float alt = 45f;
+                float legLong = 450f;
+                float legShort = 220f;
+
+                entry.Points.Add(center - fwd * (legLong * 0.5f) + right * legShort + Vector3.up * alt);
+                entry.Points.Add(center + fwd * (legLong * 0.5f) + right * legShort + Vector3.up * alt);
+                entry.Points.Add(center + fwd * (legLong * 0.5f) - right * legShort + Vector3.up * alt);
+                entry.Points.Add(center - fwd * (legLong * 0.5f) - right * legShort + Vector3.up * alt);
+                entry.Points.Add(entry.Points[0]);
+
+                StartPatternLoop(entry);
+            }
+
+            _patternEntries.Add(entry);
+            _arrivalQueue.Add(entry);
+            Log($"[ATC] Queued arrival for {aircraft.displayName} in holding pattern");
+        }
+
+        private void StartPatternLoop(PatternEntry entry)
+        {
+            if (entry.Actor == null || entry.Points == null || entry.Points.Count < 2)
+                return;
+
+            var actor = entry.Actor;
+            var pts = entry.Points.ToArray();
+            actor.StartPath(pts, () =>
+            {
+                // Loop until entry is removed from _patternEntries.
+                if (_patternEntries.Contains(entry))
+                    StartPatternLoop(entry);
+                else if (actor != null)
+                    Destroy(actor.gameObject);
+            });
+        }
+
+        private void UpdatePatternFlights(float dt)
+        {
+            if (simState == null || _patternEntries.Count == 0)
+                return;
+
+            // Convert real seconds to sim minutes using same rate as SimState.Advance.
+            float rate = simState.IsDaytime()
+                ? SimState.DAY_RATE_MIN_PER_SEC
+                : (simState.nightOpsUnlocked ? SimState.NIGHT_RATE_MIN_PER_SEC : SimState.NIGHT_RATE_NO_LIGHTS_MIN_PER_SEC);
+
+            for (int i = _patternEntries.Count - 1; i >= 0; i--)
+            {
+                var entry = _patternEntries[i];
+                entry.WaitMinutes += dt * rate;
+                if (entry.WaitMinutes >= 30f)
+                {
+                    // After 30 simulated minutes, divert this flight.
+                    simState.AddMissed();
+                    Systems.Events.RaiseMissed(simState.missed);
+                    Log($"Arrival diverted: holding timeout (30 min) for {entry.Aircraft?.displayName}");
+
+                    if (entry.Actor != null)
+                        Destroy(entry.Actor.gameObject);
+
+                    _patternEntries.RemoveAt(i);
+                    _arrivalQueue.Remove(entry);
+                }
+            }
         }
 
         private struct DwellTimer
