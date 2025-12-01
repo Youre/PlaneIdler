@@ -285,7 +285,15 @@ namespace PlaneIdler.Sim
             var roll = runway.transform.position + fwd * 40f + Vector3.up * 0.2f;
             var turnoff = stand.transform.position + Vector3.up * 0.4f;
             var standPos = stand.transform.position + Vector3.up * 0.4f;
-            actor.GetComponent<Actors.AircraftActor>()?.StartPath(new[] { start, final, touchdown, roll, turnoff, standPos }, onComplete);
+            var aa = actor.GetComponent<Actors.AircraftActor>();
+            if (aa != null)
+            {
+                var cat = ClassCategoryForAircraft(aircraft);
+                var width = WidthClassForAircraft(aircraft);
+                aa.SetCategoryColor(cat);
+                aa.SetVisualProfile(cat, width);
+                aa.StartPath(new[] { start, final, touchdown, roll, turnoff, standPos }, onComplete);
+            }
             simState.activeAircraft++;
         }
 
@@ -300,7 +308,15 @@ namespace PlaneIdler.Sim
             var accel = runway.transform.position + fwd * 100f + Vector3.up * 0.2f;
             var rotate = runway.transform.position + fwd * 180f + Vector3.up * 2f;
             var climb = runway.transform.position + fwd * 350f + Vector3.up * 30f;
-            actor.GetComponent<Actors.AircraftActor>()?.StartPath(new[] { start, lineup, accel, rotate, climb }, onComplete);
+            var aa = actor.GetComponent<Actors.AircraftActor>();
+            if (aa != null)
+            {
+                var cat = ClassCategoryForAircraft(aircraft);
+                var width = WidthClassForAircraft(aircraft);
+                aa.SetCategoryColor(cat);
+                aa.SetVisualProfile(cat, width);
+                aa.StartPath(new[] { start, lineup, accel, rotate, climb }, onComplete);
+            }
         }
 
         private void Log(string msg)
@@ -402,6 +418,31 @@ namespace PlaneIdler.Sim
                     _arrivalQueue.Remove(entry);
                 }
             }
+        }
+
+        private string ClassCategoryForAircraft(Systems.CatalogLoader.AircraftDef aircraft)
+        {
+            if (aircraft == null) return "small";
+            var cls = aircraft.@class ?? string.Empty;
+            var standClass = aircraft.standClass ?? string.Empty;
+            bool isSmall = cls == "ga_small";
+            bool isMedium = cls == "turboprop" || standClass == "ga_medium";
+            bool isLarge = cls == "regional_jet" ||
+                           cls == "narrowbody" ||
+                           cls == "widebody" ||
+                           cls == "cargo_wide" ||
+                           cls == "cargo_small";
+            if (isSmall) return "small";
+            if (isMedium) return "medium";
+            if (isLarge) return "large";
+            return "small";
+        }
+
+        private string WidthClassForAircraft(Systems.CatalogLoader.AircraftDef aircraft)
+        {
+            if (aircraft?.runway != null)
+                return string.IsNullOrEmpty(aircraft.runway.widthClass) ? "narrow" : aircraft.runway.widthClass;
+            return "narrow";
         }
 
         private struct DwellTimer
