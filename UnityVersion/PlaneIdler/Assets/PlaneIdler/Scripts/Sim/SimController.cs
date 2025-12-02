@@ -122,6 +122,7 @@ namespace PlaneIdler.Sim
                 simState?.AddDiverted();
                 Systems.Events.RaiseDiverted(simState.diverted);
                 Log($"Arrival diverted: runway unsuitable for {aircraft.id}");
+                SpawnFlyover(aircraft);
                 return;
             }
 
@@ -132,6 +133,7 @@ namespace PlaneIdler.Sim
                 simState?.AddMissed();
                 Systems.Events.RaiseMissed(simState.missed);
                 Log($"Arrival diverted: runway in use and no ATC for {aircraft.id}");
+                SpawnFlyover(aircraft);
                 return;
             }
 
@@ -148,6 +150,7 @@ namespace PlaneIdler.Sim
                 simState?.AddMissed();
                 Systems.Events.RaiseMissed(simState.missed);
                 Log($"Arrival diverted: no free stand for {aircraft.standClass}");
+                SpawnFlyover(aircraft);
                 return;
             }
 
@@ -271,53 +274,71 @@ namespace PlaneIdler.Sim
             Log($"[FBO] {aircraft.displayName} used FBO (+{fee:0})");
         }
 
-        private void SpawnArrivalActor(Systems.CatalogLoader.AircraftDef aircraft, Airport.Stand stand, System.Action onComplete)
+        // Arrivals: approach -> touchdown -> taxi to stand
+        private void SpawnArrivalActor(Systems.CatalogLoader.AircraftDef aircraft,
+                                       Airport.Stand stand,
+                                       System.Action onComplete)
         {
             if (aircraftActorPrefab == null || runway == null || stand == null) return;
+
             var actor = Instantiate(aircraftActorPrefab);
-            actor.transform.position = runway.transform.position + Vector3.back * 250f + Vector3.up * 12f;
-            var fwd = runway.transform.right.normalized; // runway length axis (X)
-            var right = runway.transform.forward.normalized;
-            var lateral = right * UnityEngine.Random.Range(-40f, 40f);
-            var start = runway.transform.position - fwd * 300f + lateral + Vector3.up * 30f;
-            var final = runway.transform.position - fwd * 40f + Vector3.up * 5f;
-            var touchdown = runway.transform.position + Vector3.up * 0.2f;
-            var roll = runway.transform.position + fwd * 40f + Vector3.up * 0.2f;
-            var turnoff = stand.transform.position + Vector3.up * 0.4f;
-            var standPos = stand.transform.position + Vector3.up * 0.4f;
-            var aa = actor.GetComponent<Actors.AircraftActor>();
+            var fwd = runway.transform.right.normalized;   // runway length axis (local X)
+
+            // Match Godot _spawn_actor_for_arrival closely:
+            // straight-in approach along the runway axis, then taxi to stand.
+            var start       = runway.transform.position - fwd * 250f + Vector3.up * 12f;
+            var runwayTouch = runway.transform.position + Vector3.up * 0.2f;
+            var standPos    = stand.transform.position + Vector3.up * 0.7f;
+
+            var aa = actor.GetComponent<PlaneIdler.Actors.AircraftActor>();
             if (aa != null)
             {
-                var cat = ClassCategoryForAircraft(aircraft);
+                var cat   = ClassCategoryForAircraft(aircraft);
                 var width = WidthClassForAircraft(aircraft);
                 aa.SetCategoryColor(cat);
                 aa.SetVisualProfile(cat, width);
-                aa.StartPath(new[] { start, final, touchdown, roll, turnoff, standPos }, onComplete);
+                aa.taxiSpeed    = 25f; // close to Godot speed_mps
+                aa.takeoffSpeed = 40f;
+
+                aa.StartPath(new[] { start, runwayTouch, standPos }, () =>
+                {
+                    onComplete?.Invoke();   // clears _runwayBusy and services queue
+                });
             }
+
             simState.activeAircraft++;
         }
 
-        private void SpawnDepartureActor(Airport.Stand stand, Systems.CatalogLoader.AircraftDef aircraft, System.Action onComplete)
+
+        // Departures: taxi from stand -> runway -> climb out
+        private void SpawnDepartureActor(Airport.Stand stand,
+                                        Systems.CatalogLoader.AircraftDef aircraft,
+                                        System.Action onComplete)
         {
             if (aircraftActorPrefab == null || runway == null || stand == null) return;
+
             var actor = Instantiate(aircraftActorPrefab);
-            actor.transform.position = stand.transform.position + Vector3.up * 0.5f;
-            var fwd = runway.transform.right.normalized;
-            var start = stand.transform.position + Vector3.up * 0.5f;
-            var lineup = runway.transform.position - fwd * 30f + Vector3.up * 0.2f;
-            var accel = runway.transform.position + fwd * 100f + Vector3.up * 0.2f;
-            var rotate = runway.transform.position + fwd * 180f + Vector3.up * 2f;
-            var climb = runway.transform.position + fwd * 350f + Vector3.up * 30f;
-            var aa = actor.GetComponent<Actors.AircraftActor>();
+            var fwd   = runway.transform.right.normalized;
+
+            var start       = stand.transform.position + Vector3.up * 0.5f;
+            var runwayPoint = runway.transform.position + fwd * 15f;
+            var exit        = runway.transform.position + fwd * 300f + Vector3.up * 6f;
+
+            var aa = actor.GetComponent<PlaneIdler.Actors.AircraftActor>();
             if (aa != null)
             {
-                var cat = ClassCategoryForAircraft(aircraft);
+                var cat   = ClassCategoryForAircraft(aircraft);
                 var width = WidthClassForAircraft(aircraft);
                 aa.SetCategoryColor(cat);
                 aa.SetVisualProfile(cat, width);
-                aa.StartPath(new[] { start, lineup, accel, rotate, climb }, onComplete);
+                aa.taxiSpeed    = 25f;
+                aa.takeoffSpeed = 40f;
+                aa.SetLifetime(10f);  // same idea as Godot
+
+                aa.StartPath(new[] { start, runwayPoint, exit }, onComplete);
             }
         }
+
 
         private void Log(string msg)
         {
@@ -418,6 +439,66 @@ namespace PlaneIdler.Sim
                     _arrivalQueue.Remove(entry);
                 }
             }
+        }
+
+        private void SpawnFlyover(Systems.CatalogLoader.AircraftDef aircraft)
+        {
+            if (aircraftActorPrefab == null || runway == null) return;
+            var actorGo = Instantiate(aircraftActorPrefab);
+            var aa = actorGo.GetComponent<PlaneIdler.Actors.AircraftActor>();
+            if (aa == null)
+            {
+                Destroy(actorGo);
+                return;
+            }
+
+            // Use size/color profile for diverted aircraft.
+            var cat = ClassCategoryForAircraft(aircraft);
+            var width = WidthClassForAircraft(aircraft);
+            aa.SetCategoryColor(cat);
+            aa.SetVisualProfile(cat, width);
+
+            var fwd = runway.transform.right.normalized;
+            var right = runway.transform.forward.normalized;
+            float dir = UnityEngine.Random.value > 0.5f ? 1f : -1f;
+            float lateralSign = UnityEngine.Random.value > 0.5f ? 1f : -1f;
+            float lateral = UnityEngine.Random.Range(80f, 140f) * lateralSign;
+            float alt = CruiseAltitudeForAircraft(aircraft, 30f, 55f);
+
+            var center = runway.transform.position;
+            var start = center - fwd * 450f * dir + right * lateral + Vector3.up * alt;
+            var mid = center + right * (lateral * 0.35f) + Vector3.up * (alt - 5f);
+            var end = center + fwd * 450f * dir + right * lateral + Vector3.up * (alt + 5f);
+
+            aa.StartPath(new[] { start, mid, end }, () =>
+            {
+                Destroy(actorGo);
+            });
+        }
+
+        private float CruiseAltitudeForAircraft(Systems.CatalogLoader.AircraftDef aircraft, float baseMin, float baseMax)
+        {
+            if (aircraft == null) return UnityEngine.Random.Range(baseMin, baseMax);
+            string cls = aircraft.@class ?? "ga_small";
+            float minAlt = baseMin;
+            float maxAlt = baseMax;
+            switch (cls)
+            {
+                case "ga_small":
+                    minAlt = 30f; maxAlt = 55f; break;
+                case "turboprop":
+                    minAlt = 40f; maxAlt = 65f; break;
+                case "regional_jet":
+                    minAlt = 50f; maxAlt = 80f; break;
+                case "narrowbody":
+                    minAlt = 60f; maxAlt = 95f; break;
+                case "widebody":
+                case "cargo_wide":
+                    minAlt = 70f; maxAlt = 110f; break;
+                case "cargo_small":
+                    minAlt = 50f; maxAlt = 80f; break;
+            }
+            return UnityEngine.Random.Range(minAlt, maxAlt);
         }
 
         private string ClassCategoryForAircraft(Systems.CatalogLoader.AircraftDef aircraft)

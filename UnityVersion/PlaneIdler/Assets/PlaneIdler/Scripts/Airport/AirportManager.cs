@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace PlaneIdler.Airport
 {
@@ -37,6 +38,10 @@ namespace PlaneIdler.Airport
             if (primaryRunway != null && !_runways.Contains(primaryRunway))
                 _runways.Add(primaryRunway);
 
+            // Layout any existing stands beside the primary runway so they
+            // are not buried under the runway mesh.
+            LayoutStandsRow();
+
             // Resolve optional visual helpers.
             if (tower == null)
                 tower = GetComponentInChildren<Tower>(true);
@@ -59,6 +64,15 @@ namespace PlaneIdler.Airport
                 taxiwaysRoot.gameObject.SetActive(false);
             if (runwayLights != null)
                 runwayLights.gameObject.SetActive(false);
+
+            // Ensure all airport geometry both casts and receives shadows so
+            // the moving sun light produces visible aircraft / runway shadows.
+            foreach (var r in GetComponentsInChildren<Renderer>(true))
+            {
+                if (r == null) continue;
+                r.shadowCastingMode = ShadowCastingMode.On;
+                r.receiveShadows = true;
+            }
         }
 
         public void OnAircraftArrive(string aircraftId)
@@ -83,6 +97,37 @@ namespace PlaneIdler.Airport
                 fuelStation.gameObject.SetActive(true);
         }
 
+        /// <summary>
+        /// Positions all stands in a single row parallel to the primary
+        /// runway, offset to one side. This mirrors the Godot layout and
+        /// keeps parking spots visible next to the runway instead of
+        /// overlapping it.
+        /// </summary>
+        private void LayoutStandsRow()
+        {
+            if (standManager == null || primaryRunway == null) return;
+
+            var stands = standManager.GetComponentsInChildren<Stand>();
+            if (stands == null || stands.Length == 0) return;
+
+            var fwd = primaryRunway.transform.right.normalized;   // along runway
+            var right = primaryRunway.transform.forward.normalized; // perpendicular
+
+            float lateralOffset = 25f;          // meters from centerline
+            float spacing = standSpacing;       // reuse configured spacing
+
+            float firstAlong = -spacing * (stands.Length - 1) * 0.5f;
+            var baseOrigin = primaryRunway.transform.position
+                             + right * -lateralOffset; // choose one side
+
+            for (int i = 0; i < stands.Length; i++)
+            {
+                float along = firstAlong + i * spacing;
+                var worldPos = baseOrigin + fwd * along + Vector3.up * 0.1f;
+                stands[i].transform.position = worldPos;
+            }
+        }
+
         public void AddStands(string standClass, int count)
         {
             if (standManager == null || count <= 0) return;
@@ -101,12 +146,14 @@ namespace PlaneIdler.Airport
                 var s = Instantiate(standPrefab, standsRoot);
                 s.StandClass = standClass;
                 s.Label = $"{standClass.ToUpper().Substring(0, Mathf.Min(2, standClass.Length))}{idx}";
-                var pos = standRowOrigin + new Vector3((idx - 1) * standSpacing, 0f, 0f);
-                s.transform.localPosition = pos;
+                s.transform.localPosition = standRowOrigin; // temporary; LayoutStandsRow will reposition
             }
 
             // Refresh stand manager list so sim sees new stands.
             standManager.RegisterStands(standsRoot.GetComponentsInChildren<Stand>());
+
+            // Re-layout all stands beside the runway after adding new ones.
+            LayoutStandsRow();
         }
 
         public void AddHangars(int slotCount)

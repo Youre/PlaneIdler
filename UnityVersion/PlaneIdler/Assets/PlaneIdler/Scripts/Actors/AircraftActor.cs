@@ -1,17 +1,19 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace PlaneIdler.Actors
 {
     /// <summary>
     /// Ports aircraft_actor.gd. Controls aircraft movement/state machine.
     /// </summary>
-    [RequireComponent(typeof(CharacterController))]
     public class AircraftActor : MonoBehaviour
     {
-        private CharacterController _controller;
         private Vector3[] _path;
         private int _pathIndex;
         private System.Action _onComplete;
+        private float _idleTime;
+        private float _age;
+        private float _maxLifetime = -1f;
         private Transform _body;
         private Renderer _renderer;
 
@@ -21,8 +23,6 @@ namespace PlaneIdler.Actors
 
         private void Awake()
         {
-            _controller = GetComponent<CharacterController>();
-
             // Ensure a simple visible mesh exists so aircraft are
             // rendered even when using placeholder prefabs.
             var existingRenderer = GetComponentInChildren<Renderer>();
@@ -53,6 +53,13 @@ namespace PlaneIdler.Actors
             {
                 _renderer = existingRenderer;
                 _body = _renderer.transform;
+            }
+
+            // Ensure aircraft can cast and receive shadows for the moving sun.
+            if (_renderer != null)
+            {
+                _renderer.shadowCastingMode = ShadowCastingMode.On;
+                _renderer.receiveShadows = true;
             }
         }
 
@@ -136,16 +143,31 @@ namespace PlaneIdler.Actors
             _path = points;
             _pathIndex = 0;
             _onComplete = onComplete;
+            _idleTime = 0f;
+            _age = 0f;
+            // Match Godot: start at the first waypoint immediately.
+            transform.position = points[0];
+        }
+
+        public void SetLifetime(float seconds)
+        {
+            _maxLifetime = seconds;
+            _age = 0f;
         }
 
         private void Update()
         {
             if (_path == null || _pathIndex >= _path.Length) return;
 
+            float dt = Time.deltaTime;
+            _age += dt;
+
             var target = _path[_pathIndex];
             var to = target - transform.position;
-            var speed = (_pathIndex <= 1 ? takeoffSpeed : taxiSpeed);
-            var step = speed * Time.deltaTime;
+            // First leg (index 0) uses higher "approach / takeoff" speed,
+            // subsequent legs use taxi speed (matches Godot feel).
+            var speed = (_pathIndex == 0 ? takeoffSpeed : taxiSpeed);
+            var step = speed * dt;
 
             if (to.magnitude <= step)
             {
@@ -160,8 +182,26 @@ namespace PlaneIdler.Actors
             else
             {
                 var dir = to.normalized;
-                transform.forward = Vector3.Lerp(transform.forward, dir, 10f * Time.deltaTime);
-                _controller.SimpleMove(dir * speed);
+                // Yaw only: keep aircraft level in pitch, like Godot's
+                // look_at(global_pos + flat_dir, Vector3.UP).
+                var flatDir = new Vector3(dir.x, 0f, dir.z);
+                if (flatDir.sqrMagnitude > 0.0001f)
+                    transform.forward = Vector3.Lerp(transform.forward, flatDir.normalized, 10f * dt);
+
+                var prevPos = transform.position;
+                // Kinematic move along path (no physics), like Godot.
+                transform.position += dir * speed * dt;
+                var moved = (transform.position - prevPos).magnitude;
+                _idleTime = moved < 0.01f ? _idleTime + dt : 0f;
+            }
+
+            // Safety: if we've been effectively stationary for several seconds
+            // while "active", force completion so the sim can recover.
+            if (_idleTime > 5f || (_maxLifetime > 0f && _age >= _maxLifetime))
+            {
+                _path = null;
+                _onComplete?.Invoke();
+                _onComplete = null;
             }
         }
     }

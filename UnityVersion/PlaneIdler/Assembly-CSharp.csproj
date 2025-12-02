@@ -74,6 +74,7 @@
     <Compile Include="Assets\PlaneIdler\Scripts\Sim\ArrivalGenerator.cs" />
     <Compile Include="Assets\PlaneIdler\Scripts\Systems\RunwayLightsController.cs" />
     <Compile Include="Assets\PlaneIdler\Scripts\Sim\Eligibility.cs" />
+    <Compile Include="Assets\PlaneIdler\Scripts\Systems\SunLightController.cs" />
     <Compile Include="Assets\PlaneIdler\Scripts\Sim\SimState.cs" />
     <Compile Include="Assets\PlaneIdler\Scripts\UI\IncomeBarChart.cs" />
     <Compile Include="Assets\PlaneIdler\Scripts\Airport\Tower.cs" />
